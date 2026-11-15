@@ -500,3 +500,34 @@ function hashShort(s: string) {
   }
   return h.toString(36);
 }
+
+/** Delete a person and everything derived from them (matches, drafts, simulated deliveries). */
+export function deletePerson(state: AppState, personId: string, at = now()): AppState {
+  const matchIds = new Set(state.matches.filter((m) => m.studentId === personId || m.mentorId === personId).map((m) => m.id));
+  const actionKeys = new Set(state.actions.filter((a) => matchIds.has(a.matchId)).map((a) => a.idempotencyKey));
+  return {
+    ...state,
+    students: state.students.filter((s) => s.id !== personId).map((s) => ({ ...s, excludeMentorIds: s.excludeMentorIds.filter((x) => x !== personId) })),
+    mentors: state.mentors.filter((m) => m.id !== personId).map((m) => ({ ...m, excludeStudentIds: m.excludeStudentIds.filter((x) => x !== personId) })),
+    matches: state.matches.filter((m) => !matchIds.has(m.id)),
+    actions: state.actions.filter((a) => !matchIds.has(a.matchId)),
+    outbox: state.outbox.filter((o) => !actionKeys.has(o.idempotencyKey)),
+    allocationRuns: state.allocationRuns.map((r) => ({
+      ...r,
+      assigned: r.assigned.filter((x) => x.studentId !== personId && x.mentorId !== personId),
+      greedyAssigned: r.greedyAssigned.filter((x) => x.studentId !== personId && x.mentorId !== personId),
+      unmatched: r.unmatched.filter((x) => x.studentId !== personId),
+      ineligibleMentors: r.ineligibleMentors.filter((x) => x.mentorId !== personId),
+    })),
+    auditLog: [...state.auditLog.filter((e) => !e.message.includes(personId)), { at, message: "A profile and all data derived from it were deleted." }],
+  };
+}
+
+export function setMentorVisibility(state: AppState, mentorId: string, visibility: "visible" | "paused", at = now()): AppState {
+  const m = getMentor(state, mentorId);
+  return {
+    ...state,
+    mentors: state.mentors.map((x) => (x.id === mentorId ? { ...x, visibility } : x)),
+    auditLog: [...state.auditLog, { at, message: `${m.name} ${visibility === "paused" ? "paused" : "resumed"} visibility. Existing approved matches are unaffected; new allocations ${visibility === "paused" ? "skip" : "include"} them.` }],
+  };
+}

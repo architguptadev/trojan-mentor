@@ -204,7 +204,8 @@ describe("full relationship journey and metrics", () => {
     st = toggleMilestone(st, matchId, ms[1].id, "s-maya", T);
     st = planAction(st, matchId, "follow_up_email", T);
     const fu = () => st.actions.find((a) => a.kind === "follow_up_email")!;
-    expect(fu().draft.type === "email" && fu().draft.body).toContain(ms[0].title);
+    const fd = fu().draft;
+    expect(fd.type === "email" ? fd.body : "").toContain(ms[0].title);
     st = approveAction(st, fu().id, "student", "s-maya", T);
     st = executeAction(st, fu().id, T);
 
