@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useApp } from "@/lib/store";
-import { Fictional, Loading, StageTag, first, fmtDateTime, topReasons } from "@/components/bits";
+import { Loading, StageTag, first, topReasons } from "@/components/bits";
+import { Avatar, Person, Thread, shortSchool } from "@/components/People";
 import { DEFAULT_THRESHOLD, LOCKED_STAGES, mentorEligibility, runAllocation, studentEligibility } from "@/domain/cohort";
 import { recruitingGaps, seatInsights } from "@/domain/insights";
 import { list } from "@/domain/compatibility";
@@ -16,133 +17,94 @@ export default function CohortPage() {
   const live = state.matches.filter((m) => m.stage === "proposed" || LOCKED_STAGES.includes(m.stage));
   const S = (id: string) => state.students.find((s) => s.id === id)!;
   const M = (id: string) => state.mentors.find((m) => m.id === id)!;
-  const lockedCount = state.matches.filter((m) => LOCKED_STAGES.includes(m.stage)).length;
+  const participating = state.students.filter((s) => !studentEligibility(s)).length;
+  const activeMentors = state.mentors.filter((m) => !mentorEligibility(m)).length;
+  const allocate = () => apply((s) => runAllocation(s), "Cohort matched. Each pair now waits for both people to approve.");
 
-  const greedyDiff = run
-    ? run.greedyAssigned.filter((g) => !run.assigned.some((a) => a.studentId === g.studentId && a.mentorId === g.mentorId))
-    : [];
-  const greedyMissing = run ? run.assigned.filter((a) => !run.greedyAssigned.some((g) => g.studentId === a.studentId)) : [];
+  const greedyDiff = run ? run.greedyAssigned.find((g) => !run.assigned.some((a) => a.studentId === g.studentId && a.mentorId === g.mentorId)) : undefined;
+  const greedyMissing = run ? run.assigned.find((a) => !run.greedyAssigned.some((g) => g.studentId === a.studentId)) : undefined;
 
   return (
     <div className="page">
-      <header className="page-head">
-        <p className="eyebrow">Cohort allocation</p>
-        <div className="row-between" style={{ alignItems: "end" }}>
-          <div>
-            <h1>Allocate the whole cohort at once</h1>
-            <p className="lede">
-              The optimizer finds the set of pairings with the highest total compatibility, within every mentor’s capacity,
-              one mentor per student, and only above a {DEFAULT_THRESHOLD}-point threshold.
-            </p>
-          </div>
-          <div className="stack" style={{ ["--stack" as string]: "6px", textAlign: "right" }}>
-            <button className="btn" disabled={!isCoordinator} onClick={() => apply((s) => runAllocation(s), "Allocation complete. Proposals are waiting for both parties.")}>
-              {run ? "Re-run allocation" : "Run allocation"}
+      <header className="page-head page-head-row">
+        <div>
+          <h1>{run ? `${live.length} of ${participating} students have a mentor` : "Match the cohort"}</h1>
+          <p className="lede">
+            {run
+              ? "Everyone is placed at once to get the best overall fit, within what each alum said they can take."
+              : `${participating} students and ${activeMentors} alumni are ready. Matching suggests pairs; no one is contacted until both people approve.`}
+          </p>
+        </div>
+        <div className="row">
+          {run && isCoordinator && (
+            <button className="btn btn-quiet btn-small" onClick={() => download("trojan-mentor-cohort.csv", cohortCsv(state), "text/csv;charset=utf-8")}>
+              Export allocation (CSV)
             </button>
-            {!isCoordinator && <span className="small muted">Switch to Program coordinator to run.</span>}
-            {run && isCoordinator && (
-              <button className="btn btn-small btn-quiet" onClick={() => download("trojan-mentor-cohort.csv", cohortCsv(state), "text/csv;charset=utf-8")}>
-                Export allocation (CSV)
-              </button>
-            )}
-          </div>
+          )}
+          <button className={`btn ${run ? "btn-secondary" : ""}`} disabled={!isCoordinator} onClick={allocate}>
+            {run ? "Re-run allocation" : "Run allocation"}
+          </button>
         </div>
       </header>
+      {!isCoordinator && <p className="notice small" style={{ marginTop: -12, marginBottom: 24 }}>Switch “Viewing as” to Program coordinator to run matching.</p>}
 
       {!run ? (
-        <div className="empty">
-          <h3>No allocation yet</h3>
-          <p>
-            {state.students.filter((s) => !studentEligibility(s)).length} students and {state.mentors.filter((m) => !mentorEligibility(m)).length} mentors are ready.
-            Running allocation proposes pairs; nobody is contacted and both sides must approve.
-          </p>
-          {isCoordinator ? (
-            <button className="btn" onClick={() => apply((s) => runAllocation(s), "Allocation complete. Proposals are waiting for both parties.")}>
-              Run allocation
-            </button>
-          ) : (
-            <p className="small">Switch to Program coordinator in “Viewing as” to run it.</p>
-          )}
-        </div>
+        <section aria-label="People in the cohort" className="grid-2">
+          <PeopleList title="Students" people={state.students.map((s) => ({ id: s.id, name: s.name, meta: s.careerGoals, off: studentEligibility(s) }))} />
+          <PeopleList title="Alumni" people={state.mentors.map((m) => ({ id: m.id, name: m.name, meta: `${m.headline.replace(/ \(fictional\)/, "")}. Up to ${m.capacity} student${m.capacity > 1 ? "s" : ""}.`, off: mentorEligibility(m) }))} />
+        </section>
       ) : (
         <>
-          <section aria-labelledby="result-title" className="grid-2" style={{ marginBottom: 40 }}>
-            <div>
-              <h2 id="result-title" style={{ marginBottom: 10 }}>
-                {run.assigned.length + lockedCount} of {state.students.filter((s) => !studentEligibility(s)).length} participating students have a mentor
-              </h2>
-              <p className="muted small">
-                Run {run.id.replace("run-", "#")} at {fmtDateTime(run.at)}. {lockedCount > 0 && `${lockedCount} already-approved match${lockedCount > 1 ? "es were" : " was"} kept fixed. `}
-                Total compatibility of new proposals: <strong className="num">{run.totalScore}</strong>.
-              </p>
-            </div>
-            <div className="panel-quiet">
-              <h3 style={{ fontSize: "1.05rem", marginBottom: 6 }}>Why not just give everyone their top match?</h3>
-              {run.greedyTotal < run.totalScore ? (
-                <p className="small" style={{ margin: 0 }}>
-                  Greedy matching (best pair first) would total <strong className="num">{run.greedyTotal}</strong> and match{" "}
-                  {run.greedyAssigned.length} students. The optimizer totals <strong className="num">{run.totalScore}</strong> and matches {run.assigned.length}.
-                  {greedyDiff.slice(0, 1).map((g) => (
-                    <span key={g.studentId}>
-                      {" "}Greedy would pair {first(S(g.studentId).name)} with {first(M(g.mentorId).name)} ({g.score})
-                      {greedyMissing[0] && <>, leaving {first(S(greedyMissing[0].studentId).name)} without a mentor</>}.
-                    </span>
-                  ))}
-                </p>
-              ) : (
-                <p className="small" style={{ margin: 0 }}>
-                  On this run, greedy matching happens to reach the same total ({run.greedyTotal}). The optimizer guarantees the
-                  highest total even when it doesn’t.
-                </p>
-              )}
-            </div>
-          </section>
+          {run.greedyTotal < run.totalScore && greedyDiff && greedyMissing && (
+            <section aria-labelledby="why-title" className="card" style={{ marginBottom: 28 }}>
+              <div className="split" style={{ alignItems: "center" }}>
+                <div>
+                  <h2 id="why-title" style={{ fontSize: "1.35rem", marginBottom: 8 }}>Why not give everyone their top match?</h2>
+                  <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>
+                    Going down the list best-pair-first would give {first(M(greedyDiff.mentorId).name)} to {first(S(greedyDiff.studentId).name)} and
+                    leave {first(S(greedyMissing.studentId).name)} with no one. Looking at the whole cohort finds a better answer for both.
+                  </p>
+                </div>
+                <div className="compare">
+                  <div>
+                    <p className="small muted">Top match first</p>
+                    <p className="figure">{run.greedyTotal}</p>
+                    <p className="small">{run.greedyAssigned.length} students matched</p>
+                  </div>
+                  <div>
+                    <p className="small muted">Whole cohort</p>
+                    <p className="figure">{run.totalScore}</p>
+                    <p className="small">{run.assigned.length} students matched</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
-          <section aria-labelledby="pairs-title" style={{ marginBottom: 48 }}>
-            <div className="row-between" style={{ marginBottom: 12 }}>
+          <section aria-labelledby="pairs-title">
+            <div className="section-head">
               <h2 id="pairs-title">Pairings</h2>
-              <span className="small muted">Scores are heuristic points (0–100), not probabilities.</span>
+              <p className="small muted">Fit is scored out of 100 from shared goals, skills, school, communities and free time.</p>
             </div>
             {live.length === 0 ? (
-              <div className="empty"><h3>No pairings</h3><p>No pair cleared the threshold under current consent and capacity.</p></div>
+              <div className="empty"><h3>No pairings yet</h3><p>No pair was a good enough fit with the current alumni and their capacity.</p></div>
             ) : (
-              <div>
+              <div className="pairings">
                 {live.map((m) => {
                   const s = S(m.studentId);
                   const mt = M(m.mentorId);
+                  const top = topReasons(s, mt, 1)[0];
                   return (
-                    <article key={m.id} className="proposal" aria-label={`${s.name} and ${mt.name}`}>
-                      <div>
-                        <p className="person-name">{s.name}</p>
-                        <p className="person-meta" style={{ margin: "2px 0 8px" }}>
-                          Student · {s.school.replace(/ (School|College) of .*/, "")} · {s.program}
-                        </p>
-                        <p className="small" style={{ margin: 0 }}>
-                          <span className="muted">with </span>
-                          <span className="serif" style={{ fontSize: "1.05rem" }}>{mt.name}</span>
-                          <br />
-                          <span className="person-meta">{mt.headline}</span>
-                        </p>
-                      </div>
-                      <div>
-                        <ul className="reasons">
-                          {topReasons(s, mt).map((r) => (
-                            <li key={r.key}>
-                              <span className="pts num">+{r.points}</span>
-                              <span>{r.reason}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div className="stack" style={{ ["--stack" as string]: "10px" }}>
-                        <p className="score num" aria-label={`Heuristic score ${m.score} of 100`}>
-                          {m.score}
-                          <small>heuristic points</small>
-                        </p>
+                    <article key={m.id} className="pairing" aria-label={`${s.name} and ${mt.name}`}>
+                      <Thread
+                        score={m.score}
+                        left={<Person id={s.id} name={s.name} meta={shortSchool(s.school)} />}
+                        right={<Person id={mt.id} name={mt.name} meta={mt.headline.replace(/,.*$/, "")} />}
+                      />
+                      <p className="why">{top?.reason}</p>
+                      <div className="end">
                         <StageTag stage={m.stage} />
-                        <Link href={`/matches/${m.id}`} className="small">
-                          Open match →
-                        </Link>
+                        <Link href={`/matches/${m.id}`} className="small">Open match</Link>
                       </div>
                     </article>
                   );
@@ -151,139 +113,114 @@ export default function CohortPage() {
             )}
           </section>
 
-          <section aria-labelledby="unmatched-title" style={{ marginBottom: 48 }}>
-            <h2 id="unmatched-title" style={{ marginBottom: 6 }}>Not matched this round</h2>
-            <p className="muted small" style={{ marginBottom: 16 }}>
-              We’d rather leave someone unmatched than invent a connection. Each reason is computed from the data.
-            </p>
+          <section aria-labelledby="unmatched-title" className="section">
+            <div className="section-head">
+              <h2 id="unmatched-title">Not matched this round</h2>
+              <p className="small muted">We’d rather say so than pair someone badly.</p>
+            </div>
             {run.unmatched.length === 0 ? (
-              <p>Every participating student received a proposal.</p>
+              <p>Every participating student has a suggested mentor.</p>
             ) : (
-              <div className="table-wrap">
-                <table>
-                  <caption className="sr-only">Students without a proposal and why</caption>
-                  <thead>
-                    <tr><th scope="col">Student</th><th scope="col">Goal</th><th scope="col">Why</th></tr>
-                  </thead>
-                  <tbody>
-                    {run.unmatched.map((u) => {
-                      const s = state.students.find((x) => x.id === u.studentId);
-                      if (!s) return null;
-                      return (
-                        <tr key={u.studentId}>
-                          <td style={{ minWidth: 150 }}><span className="serif">{s.name}</span></td>
-                          <td style={{ minWidth: 180 }} className="small">{s.careerGoals}</td>
-                          <td style={{ minWidth: 260 }} className="small">{u.reason}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="grid-2">
+                {run.unmatched.map((u) => {
+                  const s = state.students.find((x) => x.id === u.studentId);
+                  if (!s) return null;
+                  return (
+                    <div key={u.studentId} className="card stack" style={{ ["--stack" as string]: "12px" }}>
+                      <Person id={s.id} name={s.name} meta={s.careerGoals} />
+                      <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>{u.reason}</p>
+                    </div>
+                  );
+                })}
               </div>
             )}
             {run.ineligibleMentors.length > 0 && (
-              <p className="small muted" style={{ marginTop: 12 }}>
-                Not in this round:{" "}
-                {run.ineligibleMentors.map((x, i) => (
-                  <span key={x.mentorId}>{i > 0 && "; "}{M(x.mentorId)?.name ?? "A mentor"} — {x.reason.toLowerCase()}</span>
-                ))}
+              <p className="small muted" style={{ marginTop: 14 }}>
+                {run.ineligibleMentors.map((x) => `${M(x.mentorId)?.name ?? "One alum"} is ${/paused/i.test(x.reason) ? "paused this term" : "not taking students right now"}`).join(". ")}.
               </p>
             )}
           </section>
 
           <Insights />
+
+          <section className="section grid-2" aria-label="Alumni places">
+            <PeopleList
+              title="Alumni places"
+              people={state.mentors.map((m) => {
+                const used = live.filter((x) => x.mentorId === m.id).length;
+                return { id: m.id, name: m.name, meta: mentorEligibility(m) ? undefined : `${used} of ${m.capacity} places filled`, off: mentorEligibility(m), used, cap: m.capacity };
+              })}
+            />
+          </section>
         </>
       )}
+      <p className="small muted" style={{ marginTop: 28 }}>
+        Pairs need a fit of at least {DEFAULT_THRESHOLD}. <Link href="/how-it-works">How matching works</Link>
+      </p>
+    </div>
+  );
+}
 
-      <section aria-labelledby="roster-title" className="grid-2">
-        <div>
-          <h2 id="roster-title" style={{ marginBottom: 12 }}>Students</h2>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th scope="col">Name</th><th scope="col">School</th><th scope="col">Status</th></tr></thead>
-              <tbody>
-                {state.students.map((s) => (
-                  <tr key={s.id}>
-                    <td><span className="serif">{s.name}</span> {s.fictional && <span className="sr-only">(fictional)</span>}</td>
-                    <td className="small">{s.school.replace(/ (School|College) of .*/, "").replace(/ School for .*/, "")}</td>
-                    <td className="small">{studentEligibility(s) ? <span className="tag tag-neutral">Not matching</span> : <span className="tag tag-ok">Participating</span>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <h2 style={{ marginBottom: 12 }}>Alumni mentors</h2>
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th scope="col">Name</th><th scope="col">Seats</th><th scope="col">Status</th></tr></thead>
-              <tbody>
-                {state.mentors.map((m) => {
-                  const used = live.filter((x) => x.mentorId === m.id).length;
-                  return (
-                    <tr key={m.id}>
-                      <td><span className="serif">{m.name}</span></td>
-                      <td className="num small" style={{ minWidth: 110 }}>
-                        {used} of {m.capacity}
-                        <div className="meter" style={{ marginTop: 6 }} aria-hidden="true"><span style={{ width: `${Math.min(100, (used / Math.max(1, m.capacity)) * 100)}%` }} /></div>
-                      </td>
-                      <td className="small">{mentorEligibility(m) ? <span className="tag tag-neutral">{m.visibility === "paused" ? "Paused" : "Not matching"}</span> : <span className="tag tag-ok">Opted in</span>}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <p className="small muted" style={{ marginTop: 10 }}><Fictional /> Everyone listed is fictional.</p>
-        </div>
-      </section>
+function PeopleList({ title, people }: { title: string; people: { id: string; name: string; meta?: string; off: string | null; used?: number; cap?: number }[] }) {
+  return (
+    <div>
+      <h2 style={{ fontSize: "1.35rem", marginBottom: 12 }}>{title}</h2>
+      <ul className="card" style={{ listStyle: "none", margin: 0, padding: "6px 20px" }}>
+        {people.map((p, i) => (
+          <li key={p.id} className="row-between" style={{ padding: "12px 0", borderTop: i ? "1px solid var(--line)" : 0, flexWrap: "nowrap" }}>
+            <div className="person">
+              <Avatar id={p.id} name={p.name} size={36} />
+              <div>
+                <p className="person-name" style={{ fontSize: "1rem" }}>{p.name}</p>
+                {p.meta && <p className="person-meta">{p.meta}</p>}
+              </div>
+            </div>
+            {p.off ? (
+              <span className="tag tag-neutral">{/paused/i.test(p.off) ? "Paused" : "Not matching"}</span>
+            ) : p.cap !== undefined ? (
+              <div className="meter" style={{ width: 80, flexShrink: 0 }} aria-hidden="true"><span style={{ width: `${Math.min(100, ((p.used ?? 0) / p.cap) * 100)}%` }} /></div>
+            ) : null}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
 function Insights() {
   const { state } = useApp();
-  const seats = seatInsights(state).slice(0, 4);
+  const seats = seatInsights(state).filter((x) => x.newlyMatched.length).slice(0, 3);
   const gaps = recruitingGaps(state).filter((g) => g.directions.length);
   const name = (id: string) => state.students.find((s) => s.id === id)?.name.split(" ")[0] ?? "a student";
   const mentor = (id: string) => state.mentors.find((m) => m.id === id);
   if (!seats.length && !gaps.length) return null;
   return (
-    <section aria-labelledby="insights-title" style={{ marginBottom: 48 }}>
-      <h2 id="insights-title" style={{ marginBottom: 6 }}>Where more mentors would help</h2>
-      <p className="muted small" style={{ marginBottom: 18, maxWidth: "70ch" }}>
-        Computed by re-running the same optimizer with one extra seat per mentor. These are exact what-ifs on the current data, not predictions.
-        Use them to make a specific, low-pressure ask.
-      </p>
+    <section aria-labelledby="insights-title" className="section">
+      <div className="section-head">
+        <h2 id="insights-title">Where more mentors would help</h2>
+        <p className="small muted">Worked out by re-running the match with one change. Not a guess.</p>
+      </div>
       <div className="grid-2">
-        {seats.length > 0 && (
-          <div className="table-wrap">
-            <table>
-              <caption className="sr-only">Effect of one more mentor seat</caption>
-              <thead><tr><th scope="col">If this mentor took one more student</th><th scope="col">Cohort total</th><th scope="col">Newly matched</th></tr></thead>
-              <tbody>
-                {seats.map((x) => (
-                  <tr key={x.mentorId}>
-                    <td><span className="serif">{mentor(x.mentorId)?.name}</span><div className="tiny muted">now {mentor(x.mentorId)?.capacity} seat{mentor(x.mentorId)?.capacity === 1 ? "" : "s"}</div></td>
-                    <td className="num" style={{ color: "var(--green)", fontWeight: 600 }}>+{x.gain}</td>
-                    <td className="small">{x.newlyMatched.length ? x.newlyMatched.map(name).join(", ") : "No one new; better fits for others"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {gaps.length > 0 && (
-          <div className="panel-quiet stack" style={{ ["--stack" as string]: "10px" }}>
-            <h3 style={{ fontSize: "1.05rem" }}>Directions no opted-in alumni cover</h3>
-            {gaps.map((g) => (
-              <p key={g.studentId} className="small" style={{ margin: 0 }}>
-                <strong>{name(g.studentId)}</strong> is aiming for {list(g.directions).toLowerCase()}. No current mentor shares that direction, so recruiting one alum in this area is the only way to a good match.
+        {seats.map((x) => {
+          const m = mentor(x.mentorId);
+          if (!m) return null;
+          return (
+            <div key={x.mentorId} className="card stack" style={{ ["--stack" as string]: "12px" }}>
+              <Person id={m.id} name={m.name} meta={`Takes ${m.capacity} now`} />
+              <p style={{ margin: 0 }}>
+                One more place with {first(m.name)} would match <strong>{list(x.newlyMatched.map(name))}</strong> and raise the cohort’s total fit by {x.gain}.
               </p>
-            ))}
+            </div>
+          );
+        })}
+        {gaps.map((g) => (
+          <div key={g.studentId} className="card-sunk stack" style={{ ["--stack" as string]: "8px" }}>
+            <h3 style={{ fontSize: "1.1rem" }}>No alum covers {list(g.directions).toLowerCase()}</h3>
+            <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>
+              {name(g.studentId)} is aiming for this, and none of the current alumni have worked in it. Recruiting one would give {name(g.studentId)} a real option.
+            </p>
           </div>
-        )}
+        ))}
       </div>
     </section>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApp, type Role } from "@/lib/store";
 import { LOCKED_STAGES } from "@/domain/cohort";
@@ -15,122 +14,58 @@ export default function DemoPage() {
     if (role) setRole(role);
     router.push(href);
   };
-  const userStudent = state.students.find((s) => s.source !== "seed");
-  const firstLocked = state.matches.find((m) => LOCKED_STAGES.includes(m.stage));
-  const firstProposed = state.matches.find((m) => m.stage === "proposed");
-  const focus = firstLocked ?? firstProposed;
+  const locked = state.matches.find((m) => LOCKED_STAGES.includes(m.stage));
+  const proposed = state.matches.find((m) => m.stage === "proposed");
+  const focus = locked ?? proposed;
   const focusHref = focus ? `/matches/${focus.id}` : "/cohort";
-  const anyMilestone = state.matches.some((m) => m.stage === "meeting_held" && m.milestones.some((x) => x.done));
+  const asStudent = focus ? ({ kind: "student", id: focus.studentId } as Role) : undefined;
 
   const steps = [
-    {
-      title: "Onboard a student and review the extracted profile",
-      body: "Use the fictional sample resume. The demo parser (not AI) fills editable fields that you must review before saving.",
-      done: !!userStudent,
-      action: { label: "Open student onboarding", onClick: go("/onboard/student", { kind: "coordinator" }) },
-    },
-    {
-      title: "Optional: add an alumni mentor",
-      body: "Explicit opt-in, capacity and visibility controls. Adding capacity can change who gets matched.",
-      done: state.mentors.some((m) => m.id.startsWith("m-user-")),
-      optional: true,
-      action: { label: "Open alumni onboarding", onClick: go("/onboard/alumni", { kind: "coordinator" }) },
-    },
-    {
-      title: "Allocate the cohort",
-      body: "Run the global optimizer. See proposed pairs, explanations, unmatched students, and how it compares with greedy matching.",
-      done: state.allocationRuns.length > 0,
-      action: { label: "Go to the cohort", onClick: go("/cohort", { kind: "coordinator" }) },
-    },
-    {
-      title: "Student and mentor both approve",
-      body: "Switch to each simulated role on a match page. Either can decline. Match approval does not approve any message.",
-      done: !!firstLocked,
-      action: { label: focus ? "Open a proposed match" : "Allocate first", onClick: go(focusHref) },
-    },
-    {
-      title: "Approve the introduction draft",
-      body: "As coordinator, read the exact draft and approve it. Try “simulate a failure” to see the retry path without duplicates.",
-      done: state.outbox.some((o) => o.kind === "introduction_email"),
-      action: { label: "Open the match", onClick: go(focusHref, { kind: "coordinator" }) },
-    },
-    {
-      title: "Coordinate the first meeting",
-      body: "As the student, choose an overlapping time and approve the simulated calendar invitation.",
-      done: state.outbox.some((o) => o.kind === "calendar_invite"),
-      action: { label: "Open the match", onClick: go(focusHref, focus ? { kind: "student", id: focus.studentId } : undefined) },
-    },
-    {
-      title: "Confirm the meeting and complete milestones",
-      body: "Record that the meeting happened, then check off template-based milestones drawn from the student’s goals.",
-      done: anyMilestone,
-      action: { label: "Open the match", onClick: go(focusHref, focus ? { kind: "student", id: focus.studentId } : undefined) },
-    },
-    {
-      title: "See the updated cohort metrics",
-      body: "Every figure is computed from the current state in this browser.",
-      done: false,
-      action: { label: "Open the dashboard", onClick: go("/dashboard") },
-    },
+    { title: "Onboard a student", body: "Use the sample resume, check the details it fills in, and save.", done: state.students.some((s) => s.source !== "seed"), label: "Open student onboarding", onClick: go("/onboard/student", { kind: "coordinator" }) },
+    { title: "Match the cohort", body: "Place every student at once and see who wasn’t matched, and why.", done: state.allocationRuns.length > 0, label: "Go to the cohort", onClick: go("/cohort", { kind: "coordinator" }) },
+    { title: "Approve as the student, then the alum", body: "Switch “Viewing as” to each of them on a match page.", done: !!locked, label: focus ? "Open a match" : "Match the cohort first", onClick: go(focusHref) },
+    { title: "Approve and send the introduction", body: "As coordinator, read the exact email. Try forcing a failure, then retry.", done: state.outbox.some((o) => o.kind === "introduction_email"), label: "Open the match", onClick: go(focusHref, { kind: "coordinator" }) },
+    { title: "Plan the first meeting", body: "As the student, pick a time you’re both free and approve the invitation.", done: state.outbox.some((o) => o.kind === "calendar_invite"), label: "Open the match", onClick: go(focusHref, asStudent) },
+    { title: "Confirm the meeting and tick off milestones", body: "Next steps come from the student’s own goals.", done: state.matches.some((m) => m.stage === "meeting_held" && m.milestones.some((x) => x.done)), label: "Open the match", onClick: go(focusHref, asStudent) },
+    { title: "Check the dashboard", body: "Every number comes from what you just did.", done: false, label: "Open the dashboard", onClick: go("/dashboard") },
   ];
-  const nextIdx = steps.findIndex((s) => !s.done && !s.optional);
+  const next = steps.findIndex((s) => !s.done);
 
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">Guided demo</p>
-        <h1>Walk the whole journey in about five minutes</h1>
-        <p className="lede">
-          A fictional cohort of eight students and five alumni is already loaded. Progress below updates from what you’ve
-          actually done, and survives a page refresh.
-        </p>
+        <h1>Walk through a full match</h1>
+        <p className="lede">A small fictional cohort is already loaded: eight students and five alumni. Your progress is saved in this browser.</p>
       </header>
 
       <div className="split">
-        <ol className="checklist" aria-label="Demo steps">
+        <ol className="todo" aria-label="Demo steps">
           {steps.map((s, i) => (
-            <li key={s.title} data-done={s.done} data-next={i === nextIdx}>
-              <span className="mark" aria-hidden="true">
-                {s.done ? "✓" : i + 1}
-              </span>
+            <li key={s.title} data-done={s.done} data-next={i === next}>
+              <span className="mark" aria-hidden="true">{s.done ? "✓" : i + 1}</span>
               <div>
-                <h3>
-                  {s.title} {s.done && <span className="sr-only">(done)</span>}
-                  {i === nextIdx && <span className="sr-only">(next step)</span>}
-                </h3>
+                <h3>{s.title}{s.done && <span className="sr-only"> (done)</span>}</h3>
                 <p>{s.body}</p>
               </div>
-              <button className={`btn btn-small ${i === nextIdx ? "" : "btn-secondary"}`} onClick={s.action.onClick}>
-                {s.action.label}
-              </button>
+              <button className={`btn btn-small ${i === next ? "" : "btn-secondary"}`} onClick={s.onClick}>{s.label}</button>
             </li>
           ))}
         </ol>
 
-        <aside className="stack" aria-label="About this demo">
-          <div className="panel stack">
-            <h3>Simulated roles</h3>
-            <p className="small" style={{ margin: 0 }}>
-              Use <strong>Viewing as</strong> under the header to act as the coordinator, a student or a mentor. This is a
-              demo convenience to show bilateral approval — it is not authentication, and anyone using this browser can switch.
-            </p>
-          </div>
-          <div className="panel stack">
-            <h3>What’s real and what’s simulated</h3>
-            <ul className="small" style={{ margin: 0, paddingLeft: 18 }}>
-              <li>Real: scoring, the cohort optimizer, consent rules, approvals, retry and idempotency logic.</li>
-              <li>Simulated: email and calendar delivery. Nothing is ever sent; the app records what would have been sent.</li>
-              <li>Fictional: every person, employer and activity in the cohort.</li>
-              <li>Local only: data is stored in this browser’s localStorage, not shared across devices.</li>
-            </ul>
-          </div>
-          <div className="panel stack">
-            <h3>Start over any time</h3>
-            <p className="small" style={{ margin: 0 }}>
-              “Reset demo data” in the top strip restores the original cohort. Individual profiles can be deleted from{" "}
-              <Link href="/privacy">Privacy & data</Link>.
-            </p>
-          </div>
+        <aside className="card-sunk">
+          <h3 style={{ marginBottom: 14 }}>Good to know</h3>
+          <p className="small">
+            <strong>Roles are pretend.</strong> “Viewing as” lets you act as anyone so you can see both sides approve. It isn’t a sign-in.
+          </p>
+          <p className="small">
+            <strong>Nothing is really sent.</strong> Emails and calendar invites are recorded, not delivered.
+          </p>
+          <p className="small">
+            <strong>Start over any time</strong> with “Reset demo data” in the bar above.
+          </p>
+          <p className="small" style={{ marginBottom: 0 }}>
+            Also try <button className="linklike" onClick={go("/onboard/alumni", { kind: "coordinator" })}>adding an alum</button> to see capacity change who gets matched.
+          </p>
         </aside>
       </div>
     </div>

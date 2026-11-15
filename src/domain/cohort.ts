@@ -129,7 +129,7 @@ export function runAllocation(state: AppState, opts: AllocationOptions = {}): Ap
     allocationRuns: [...state.allocationRuns, run],
     auditLog: [
       ...state.auditLog,
-      { at: now, message: `Allocation ${runId}: ${assigned.length} proposed, ${unmatched.length} unmatched, total score ${opt.total} (greedy baseline ${greedy.total}).` },
+      { at: now, message: `Cohort matched: ${assigned.length} pair${assigned.length === 1 ? "" : "s"} suggested, ${unmatched.length} student${unmatched.length === 1 ? "" : "s"} not matched.` },
     ],
   };
 }
@@ -150,14 +150,14 @@ function explainUnmatched(
       .map((m) => ({ m, blocked: pairBlocked(state, s, m), c: compatibility(s, m) }))
       .sort((a, b) => b.c.score - a.c.score);
     const best = candidates.find((c) => !c.blocked);
-    if (!best) return `Every available mentor is excluded for ${first}. No pairing was proposed.`;
+    if (!best) return `${first} asked not to be matched with any of the available alumni.`;
     const parts = best.c.components.filter((c) => c.points > 0).map((c) => c.label.toLowerCase());
-    return `No available mentor reached the ${threshold}-point threshold. Closest was ${best.m.name} at ${best.c.score} (${parts.length ? parts.join(", ") : "no overlapping fields"}). ${first} stays unmatched rather than receiving a weak pairing.`;
+    return `None of the current alumni are a close enough fit (the threshold is ${threshold}). The nearest was ${best.m.name.split(" ")[0]} at ${best.c.score}, with only ${parts.length ? parts.join(" and ") : "nothing"} in common.`;
   }
   const used = new Map<number, number>();
   assignment.forEach((m) => m >= 0 && used.set(m, (used.get(m) ?? 0) + 1));
   const names = eligible
     .sort((a, b) => (b.w as number) - (a.w as number))
-    .map((x) => `${mentors[x.i].name.split(" ")[0]} (${x.w})`);
-  return `Cleared the threshold with ${names.join(", ")}, but ${eligible.length > 1 ? "those mentors are" : "that mentor is"} at capacity in the allocation with the highest cohort total. Adding mentor capacity would let ${first} be matched.`;
+    .map((x) => mentors[x.i].name.split(" ")[0]);
+  return `${names.join(" and ")} would be a good fit, but ${eligible.length > 1 ? "their places" : "the places"} went to stronger matches elsewhere. One more mentor place would let ${first} be matched.`;
 }

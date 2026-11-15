@@ -177,7 +177,7 @@ export function decideMatch(
     st = { ...st, auditLog: log(st, `${person.name} declined the proposed match. The pair will not be proposed again.`, at) };
     return replaceMatch(st, next);
   }
-  st = { ...st, auditLog: log(st, `${person.name} approved the proposed match with ${party === "student" ? m.name : s.name}.`, at) };
+  st = { ...st, auditLog: log(st, `${person.name} said yes to a match with ${party === "student" ? m.name : s.name}.`, at) };
 
   if (next.student.decision === "approved" && next.mentor.decision === "approved") {
     next = {
@@ -187,7 +187,7 @@ export function decideMatch(
       milestones: generateMilestones(s, m, next.id),
     };
     st = replaceMatch(st, next);
-    st = { ...st, auditLog: log(st, `Both ${s.name} and ${m.name} approved. Introduction draft prepared for coordinator review.`, at) };
+    st = { ...st, auditLog: log(st, `${s.name} and ${m.name} both said yes. An introduction is drafted for the coordinator to review.`, at) };
     return planAction(st, next.id, "introduction_email", at);
   }
   return replaceMatch(st, next);
@@ -225,21 +225,22 @@ export function buildDraft(state: AppState, match: Match, kind: ActionKind, slot
     const d: EmailDraft = {
       type: "email",
       to: [demoEmail(s), demoEmail(m)],
-      subject: `Introduction: ${sf} ${s.name.split(" ").slice(1).join(" ")} and ${mf} — Trojan Mentor`,
+      subject: `${sf}, meet ${mf}`,
       body: [
         `Hi ${sf} and ${mf},`,
         ``,
-        `You both approved this mentorship match, so we’re introducing you.`,
+        `You’ve both said yes, so I’m glad to introduce you.`,
         ``,
-        `${sf} is studying ${s.program} (${s.school}, class of ${s.gradYear}). Their goal: ${s.careerGoals}`,
+        `${sf} is studying ${s.program.replace(/^[A-Z]\.[A-Z]\.\s*/, "").toLowerCase()} and graduates in ${s.gradYear}. In ${sf}’s words: “${s.careerGoals.replace(/\.$/, "")}.”`,
         ``,
-        `${mf} is ${m.headline}. ${mf}’s mentoring preference: ${m.mentoringPreferences}`,
+        `${mf} is ${article(m.headline.replace(/ \(fictional\)/g, ""))}. On mentoring, ${mf} wrote: “${m.mentoringPreferences.replace(/\.$/, "")}.”`,
         ``,
-        `Why we suggested this pairing: shared ${matchReasonsShort(state, match)}.`,
+        matchReasonsShort(state, match),
         ``,
-        `${sf}, please propose a first conversation in one of your overlapping times. You can reply to each other directly.`,
+        `${sf}, would you suggest a time for a first conversation? Reply to both of us and we’ll take it from there.`,
         ``,
-        `— Trojan Mentor program coordinator`,
+        `Best,`,
+        `The Trojan Mentor team`,
       ].join("\n"),
     };
     return d;
@@ -262,7 +263,7 @@ export function buildDraft(state: AppState, match: Match, kind: ActionKind, slot
   const d: EmailDraft = {
     type: "email",
     to: [demoEmail(m)],
-    subject: `Thank you — and my next step`,
+    subject: `Thank you, and what I’m working on next`,
     body: [
       `Hi ${mf},`,
       ``,
@@ -280,12 +281,18 @@ function matchReasonsShort(state: AppState, match: Match) {
   const s = getStudent(state, match.studentId);
   const m = getMentor(state, match.mentorId);
   const parts: string[] = [];
-  if (s.school === m.school) parts.push(`${s.school}`);
+  if (s.school === m.school) parts.push(`you both came through ${s.school.replace(/^(USC )?/, "the ")}`);
   const comm = s.communities.filter((c) => m.communities.includes(c));
-  if (comm.length) parts.push(comm.join(", ").toLowerCase());
+  if (comm.length) parts.push(`you share ${comm.map((c) => c.toLowerCase()).join(" and ")}`);
   const slots = sharedSlots(s.availability, m.availability);
-  if (slots.length) parts.push(`availability (${slots.map(slotLabel).join(", ")})`);
-  return parts.length ? `career direction, plus ${parts.join("; ")}` : "career direction";
+  if (slots.length) parts.push(`you’re both usually free ${slots.slice(0, 2).map(slotLabel).join(" and ")}`);
+  if (!parts.length) return `We matched you on where ${s.name.split(" ")[0]} wants to go and where ${m.name.split(" ")[0]} has been.`;
+  const joined = parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return `Beyond the career overlap, ${joined}.`;
+}
+
+function article(phrase: string) {
+  return /^[aeiou]/i.test(phrase) ? `an ${phrase.charAt(0).toLowerCase()}${phrase.slice(1)}` : `a ${phrase.charAt(0).toLowerCase()}${phrase.slice(1)}`;
 }
 
 export function planAction(state: AppState, matchId: string, kind: ActionKind, at = now(), slot?: Slot): AppState {
@@ -308,7 +315,7 @@ export function planAction(state: AppState, matchId: string, kind: ActionKind, a
     requiredApprover: REQUIRED_APPROVER[kind],
     status: "awaiting_approval",
     attempts: 0,
-    history: [{ at, phase: "plan", message: `Planned ${labelForKind(kind)}. Draft is waiting for ${REQUIRED_APPROVER[kind]} approval. Nothing has been sent.` }],
+    history: [{ at, phase: "plan", message: `Drafted. Waiting for the ${REQUIRED_APPROVER[kind]} to approve. Nothing sent.` }],
     createdAt: at,
   };
   return { ...state, actions: [...state.actions, action] };
@@ -344,7 +351,7 @@ export function approveAction(state: AppState, actionId: string, role: ApproverR
     ...a,
     status: "approved",
     approval: { role, by: actorId, at, draftHash: draftHash(a.draft), consentVersions: { student: s.consent.version, mentor: m.consent.version } },
-    history: [...a.history, { at, phase: "approve", message: `Approved exact draft (hash ${draftHash(a.draft)}) as ${role}.` }],
+    history: [...a.history, { at, phase: "approve", message: `Approved by the ${role}, for this exact wording.` }],
   });
 }
 
@@ -374,7 +381,7 @@ export function executeAction(state: AppState, actionId: string, at = now()): Ap
   if (blocker) throw new DomainError(blocker);
 
   const attempts = a.attempts + 1;
-  const history = [...a.history, { at, phase: "act" as const, message: `Attempt ${attempts}: sent to simulated ${a.draft.type === "email" ? "email" : "calendar"} adapter with key ${a.idempotencyKey}.` }];
+  const history = [...a.history, { at, phase: "act" as const, message: `Attempt ${attempts}: handed to the simulated ${a.draft.type === "email" ? "email" : "calendar"} service.` }];
   const existing = state.outbox.find((o) => o.idempotencyKey === a.idempotencyKey);
   const failure = state.nextFailure;
   let outbox = state.outbox;
@@ -400,7 +407,7 @@ export function executeAction(state: AppState, actionId: string, at = now()): Ap
       lastError: "Simulated provider error (503). Nothing was delivered.",
       history: [...history, { at, phase: "observe", message: "Failed: simulated provider returned 503. Nothing was delivered. Safe to retry with the same key." }],
     };
-    return { ...replaceAction(st, failed), auditLog: log(st, `Simulated delivery failed for ${labelForKind(a.kind)} (attempt ${attempts}).`, at) };
+    return { ...replaceAction(st, failed), auditLog: log(st, `${cap(labelForKind(a.kind))} failed on attempt ${attempts}.`, at) };
   }
 
   const providerId = `sim-${a.kind.split("_")[0]}-${hashShort(a.idempotencyKey)}`;
@@ -422,7 +429,7 @@ export function executeAction(state: AppState, actionId: string, at = now()): Ap
       lastError: "Simulated timeout waiting for acknowledgement. Delivery status unknown.",
       history: [...history, { at, phase: "observe", message: "Timed out waiting for the simulated provider. Delivery status unknown — retrying with the same key is safe." }],
     };
-    return { ...replaceAction(st, failed), auditLog: log(st, `Simulated acknowledgement lost for ${labelForKind(a.kind)} (attempt ${attempts}).`, at) };
+    return { ...replaceAction(st, failed), auditLog: log(st, `${cap(labelForKind(a.kind))} confirmation lost on attempt ${attempts}.`, at) };
   }
 
   const done: CoordinationAction = {
@@ -438,7 +445,7 @@ export function executeAction(state: AppState, actionId: string, at = now()): Ap
 
 function applySuccess(state: AppState, a: CoordinationAction, at: string): AppState {
   const match = getMatch(state, a.matchId);
-  let st = { ...state, auditLog: log(state, `${labelForKind(a.kind)} recorded by simulated adapter.`, at) };
+  let st = { ...state, auditLog: log(state, `${cap(labelForKind(a.kind))} recorded (simulated).`, at) };
   if (a.kind === "introduction_email" && match.stage === "approved") {
     st = replaceMatch(st, { ...match, stage: "introduced" });
   }
@@ -473,6 +480,8 @@ export function toggleMilestone(state: AppState, matchId: string, milestoneId: s
 export function setNextFailure(state: AppState, mode: AppState["nextFailure"]): AppState {
   return { ...state, nextFailure: mode };
 }
+
+const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
 
 export function labelForKind(k: ActionKind) {
   return k === "introduction_email" ? "introduction email" : k === "calendar_invite" ? "calendar invite" : "follow-up email";

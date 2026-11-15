@@ -4,20 +4,21 @@ import { compatibility } from "@/domain/compatibility";
 import type { Match, MentorProfile, StudentProfile } from "@/domain/types";
 
 export function Fictional() {
-  return <span className="tag tag-fiction" title="This person is invented for the demo">Fictional</span>;
+  return <span className="tag tag-fiction">Fictional</span>;
 }
 
+const STAGES: Record<Match["stage"], [string, string]> = {
+  proposed: ["Waiting for both to approve", "tag-wait"],
+  approved: ["Both approved", "tag-ok"],
+  declined: ["Declined", "tag-bad"],
+  revoked: ["Revoked after consent was withdrawn", "tag-bad"],
+  introduced: ["Introduced (simulated)", "tag-ok"],
+  meeting_scheduled: ["Meeting scheduled (simulated)", "tag-ok"],
+  meeting_held: ["First meeting held", "tag-ok"],
+};
+
 export function StageTag({ stage }: { stage: Match["stage"] }) {
-  const map: Record<Match["stage"], [string, string]> = {
-    proposed: ["Awaiting both approvals", "tag-wait"],
-    approved: ["Both approved", "tag-ok"],
-    declined: ["Declined", "tag-bad"],
-    revoked: ["Revoked — consent withdrawn", "tag-bad"],
-    introduced: ["Introduced (simulated)", "tag-ok"],
-    meeting_scheduled: ["Meeting scheduled (simulated)", "tag-ok"],
-    meeting_held: ["First meeting held", "tag-ok"],
-  };
-  const [label, cls] = map[stage];
+  const [label, cls] = STAGES[stage];
   return <span className={`tag ${cls}`}>{label}</span>;
 }
 
@@ -28,20 +29,17 @@ export function ScoreBreakdown({ student, mentor }: { student: StudentProfile; m
       <ul className="reasons" aria-label="Score breakdown">
         {c.components.map((x) => (
           <li key={x.key}>
-            <span className={`pts num ${x.points ? "" : "zero"}`} aria-label={`${x.points} of ${x.max} points`}>
-              +{x.points}
-            </span>
+            <span className={`pts num ${x.points ? "" : "zero"}`} aria-label={`${x.points} of ${x.max} points`}>+{x.points}</span>
             <span>
-              <strong style={{ fontWeight: 600 }}>{x.label}</strong>
-              <span className="muted"> · up to {x.max}</span>
+              <strong style={{ fontWeight: 600, color: "var(--ink)" }}>{x.label}</strong>
               <br />
-              <span className={x.points ? "" : "muted"}>{x.reason || "No overlap in reviewed fields."}</span>
+              <span className={x.points ? "" : "muted"}>{x.reason || "Nothing in common here."}</span>
             </span>
           </li>
         ))}
       </ul>
-      <p className="tiny muted" style={{ marginTop: 8, marginBottom: 0 }}>
-        Heuristic score: keyword overlap plus a small synonym list. Not a probability or model confidence.
+      <p className="tiny muted" style={{ margin: "10px 0 0" }}>
+        Points out of 100, from overlapping profile fields. A rough guide to fit, not a prediction.
       </p>
     </div>
   );
@@ -71,11 +69,7 @@ export function fmtDateTime(iso: string) {
 }
 
 export function Loading() {
-  return (
-    <div className="page loading" role="status">
-      Loading demo data from this browser…
-    </div>
-  );
+  return <div className="page loading" role="status">Loading…</div>;
 }
 
 export function first(name: string) {

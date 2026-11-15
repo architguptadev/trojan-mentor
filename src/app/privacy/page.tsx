@@ -21,13 +21,13 @@ export default function PrivacyPage() {
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">Privacy & data</p>
-        <h1>What we keep, where, and how to take it back</h1>
-        <p className="lede">Plain answers about storage, plus the controls to change consent or delete data at any time.</p>
+        
+        <h1>Your data, and how to take it back</h1>
+        <p className="lede">What we keep, where it lives, and the switches to change your mind.</p>
       </header>
 
       <section aria-labelledby="where-title" style={{ marginBottom: 48 }}>
-        <h2 id="where-title" style={{ marginBottom: 14 }}>Where data lives in this demo</h2>
+        <h2 id="where-title" style={{ marginBottom: 14 }}>Where things live in this demo</h2>
         <div className="table-wrap">
           <table>
             <thead><tr><th scope="col">Data</th><th scope="col">Where</th><th scope="col">How long</th></tr></thead>
@@ -47,7 +47,7 @@ export default function PrivacyPage() {
 
       <section aria-labelledby="consent-title" className="split" style={{ marginBottom: 48 }}>
         <div>
-          <h2 id="consent-title" style={{ marginBottom: 6 }}>Consent controls</h2>
+          <h2 id="consent-title" style={{ marginBottom: 6 }}>Your choices</h2>
           <p className="small muted" style={{ marginBottom: 16 }}>
             {role.kind === "coordinator" ? "As coordinator you can view consent for anyone in the demo. In a real system only the person themselves could change it." : `Showing consent for ${roleLabel(state, role)}.`}
           </p>
@@ -65,28 +65,28 @@ export default function PrivacyPage() {
             <p className="empty small">Choose a person, or switch “Viewing as” to a student or mentor.</p>
           ) : (
             <div>
-              <fieldset>
+              <fieldset className="choices">
                 <legend className="sr-only">Consent for {person.name}</legend>
-                <label className="check">
+                <label className="choice">
                   <input type="checkbox" checked={person.consent.profileProcessing} onChange={(e) => apply((s) => updateConsent(s, person.id, { profileProcessing: e.target.checked }), e.target.checked ? "Profile processing consent granted." : "Consent withdrawn. Open matches were revoked and pending messages cancelled.")} />
-                  <span><strong>Store and process profile</strong><span className="hint">Withdrawing also turns off matching, revokes matches and cancels pending drafts.</span></span>
+                  <span><strong>Save my profile</strong><span className="hint">Turning this off also ends your matches and cancels anything waiting to be sent.</span></span>
                 </label>
-                <label className="check">
+                <label className="choice">
                   <input type="checkbox" checked={person.consent.externalAI} onChange={(e) => apply((s) => updateConsent(s, person.id, { externalAI: e.target.checked }), "External AI consent updated.")} />
-                  <span><strong>External AI processing of documents</strong><span className="hint">Only affects future document uploads.</span></span>
+                  <span><strong>Let AI read my resume</strong><span className="hint">Only affects future uploads.</span></span>
                 </label>
-                <label className="check">
+                <label className="choice">
                   <input type="checkbox" checked={person.consent.matching} disabled={!person.consent.profileProcessing} onChange={(e) => apply((s) => updateConsent(s, person.id, { matching: e.target.checked }), e.target.checked ? "Visible for matching again. Earlier approvals stay invalid — a new allocation and new approvals are required." : "Removed from matching. Open matches were revoked and pending messages cancelled.")} />
-                  <span><strong>Visible for matching</strong><span className="hint">Withdrawing revokes matches. Re-granting does not revive old approvals.</span></span>
+                  <span><strong>Include me in matching</strong><span className="hint">Turning this off ends your matches. Turning it back on doesn’t revive old approvals.</span></span>
                 </label>
                 {person.kind === "mentor" && (
-                  <label className="check">
+                  <label className="choice">
                     <input type="checkbox" checked={person.visibility === "visible"} onChange={(e) => apply((s) => setMentorVisibility(s, person.id, e.target.checked ? "visible" : "paused"), e.target.checked ? "Visibility resumed." : "Visibility paused.")} />
-                    <span><strong>Profile visible to the allocator</strong><span className="hint">Pause to stop new proposals without withdrawing consent.</span></span>
+                    <span><strong>Open to new matches</strong><span className="hint">Pause new suggestions without leaving the program.</span></span>
                   </label>
                 )}
               </fieldset>
-              <p className="tiny muted" style={{ marginTop: 8 }}>Consent version {person.consent.version}. Approvals record this number; any change makes earlier approvals stale.</p>
+              <p className="tiny muted" style={{ marginTop: 8 }}>Any change here means earlier approvals have to be given again.</p>
               <div className="row" style={{ marginTop: 16 }}>
                 <button className="btn btn-small btn-secondary" onClick={() => { const e = personExport(state, person.id); if (e) download(`trojan-mentor-${person.id}.json`, JSON.stringify(e, null, 2), "application/json"); }}>
                   Download this profile’s data
@@ -104,9 +104,9 @@ export default function PrivacyPage() {
             </div>
           )}
         </div>
-        <aside className="panel stack">
-          <h3>Reset everything</h3>
-          <p className="small" style={{ margin: 0 }}>Replaces all data in this browser with the original fictional cohort. Useful before a demo.</p>
+        <aside className="card stack">
+          <h3>Start the demo over</h3>
+          <p className="small" style={{ margin: 0 }}>Replaces everything in this browser with the original fictional cohort.</p>
           {confirmReset ? (
             <div className="row">
               <button className="btn btn-small btn-danger" onClick={() => { reset(); setConfirmReset(false); }}>Yes, reset all demo data</button>

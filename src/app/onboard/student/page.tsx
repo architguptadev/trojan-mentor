@@ -44,15 +44,15 @@ export default function StudentOnboarding() {
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">Student onboarding</p>
+        
         <h1>Tell us where you’re headed</h1>
-        <p className="lede">A few minutes now means a mentor conversation that starts in the right place.</p>
+        <p className="lede">A few minutes here means your first conversation with a mentor starts in the right place.</p>
       </header>
 
-      <ol className="steps" aria-label="Progress">
+      <ol className="progress" aria-label="Progress">
         {STEPS.map((s, i) => (
           <li key={s.key} aria-current={s.key === step ? "step" : undefined} data-done={i < idx}>
-            <span className="n">{i + 1}</span>
+            
             {s.label}
             {i < idx && <span className="sr-only"> (complete)</span>}
           </li>
@@ -113,7 +113,7 @@ export default function StudentOnboarding() {
             };
             const ok = apply(
               (s) => ({ ...s, students: [...s.students, student], auditLog: [...s.auditLog, { at, message: `${student.name} completed onboarding (fields reviewed; source: ${student.source}).` }] }),
-              "Profile saved. The raw document was not stored.",
+              "Profile saved. Your resume file wasn’t kept.",
             );
             if (ok) {
               setSavedId(id);
@@ -128,17 +128,17 @@ export default function StudentOnboarding() {
             {saved.name.split(" ")[0]}’s profile is saved
           </h2>
           <p className="lede">
-            Only the reviewed fields were kept, in this browser. {saved.consent.matching ? "They’ll be included the next time the cohort is allocated." : "Matching consent is off, so they won’t be included in allocation."}
+            We kept only the details you confirmed. {saved.consent.matching ? "They’ll be included the next time the cohort is matched." : "You chose not to be matched, so they won’t be included."}
           </p>
           <div className="row">
             <button
               className="btn"
               onClick={() => {
-                apply((s) => runAllocation(s), "Cohort re-allocated with the new profile.");
+                apply((s) => runAllocation(s), "Cohort matched again with the new profile.");
                 router.push("/cohort");
               }}
             >
-              Re-allocate the cohort
+              Match the cohort again
             </button>
             <button
               className="btn btn-secondary"
@@ -177,38 +177,38 @@ function ConsentStep({ headingRef, consent, setConsent, onNext }: { headingRef: 
     <section aria-labelledby="consent-title" className="split">
       <div>
         <h2 id="consent-title" ref={headingRef} tabIndex={-1} style={{ marginBottom: 12 }}>
-          Three separate choices
+          First, what you’re comfortable with
         </h2>
         <p className="muted" style={{ marginBottom: 20 }}>
-          You can change any of these later from Privacy & data. Withdrawing takes effect immediately.
+          You can change these later, and changes take effect right away.
         </p>
-        <fieldset>
+        <fieldset className="choices">
           <legend className="sr-only">Consent choices</legend>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={consent.profileProcessing} onChange={(e) => setConsent({ ...consent, profileProcessing: e.target.checked })} aria-describedby={tried && !consent.profileProcessing ? errId : undefined} />
             <span>
-              <strong>Store and process my reviewed profile</strong>
-              <span className="hint">Required to take part. Only the fields you review are kept — never the raw resume. In this demo they’re stored in this browser only.</span>
+              <strong>Save my profile</strong>
+              <span className="hint">Required. We keep only the details you confirm, never your resume file.</span>
             </span>
           </label>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={consent.externalAI} onChange={(e) => setConsent({ ...consent, externalAI: e.target.checked })} />
             <span>
-              <strong>Allow external AI processing of my document</strong>
-              <span className="hint">Optional. If the server has Gemini configured, your document is sent to Google’s Gemini API to suggest fields. Without this, a rule-based demo parser runs instead.</span>
+              <strong>Let AI read my resume</strong>
+              <span className="hint">Optional. Your file is sent to Google’s Gemini to suggest details. Without this, a simple rule-based reader is used.</span>
             </span>
           </label>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={consent.profileProcessing && consent.matching} disabled={!consent.profileProcessing} onChange={(e) => setConsent({ ...consent, matching: e.target.checked })} />
             <span>
-              <strong>Make me visible for matching</strong>
-              <span className="hint">Optional. Lets the allocator propose you to opted-in alumni. You still approve any match yourself.</span>
+              <strong>Include me in matching</strong>
+              <span className="hint">Optional. You’ll still approve any match before an introduction.</span>
             </span>
           </label>
         </fieldset>
         {tried && !consent.profileProcessing && (
           <p id={errId} className="notice notice-error" role="alert" style={{ marginTop: 16 }}>
-            Profile storage and processing is needed to continue. You can still read how the program works without it.
+            Saving your profile is needed to continue.
           </p>
         )}
         <div className="row" style={{ marginTop: 24 }}>
@@ -222,16 +222,15 @@ function ConsentStep({ headingRef, consent, setConsent, onNext }: { headingRef: 
             Continue
           </button>
           <Link className="btn btn-quiet" href="/privacy">
-            How data is handled
+            How your data is handled
           </Link>
         </div>
       </div>
-      <aside className="panel-quiet small">
+      <aside className="card-sunk small">
         <p>
-          <strong>What’s stored where.</strong> The demo keeps everything in your browser’s localStorage. Uploaded files go
-          to this app’s server only for the length of one request to read them, and are never written to disk or a database.
+          <strong>Where it goes.</strong> In this demo your profile stays in this browser. Your resume is read once on our server and then discarded.
         </p>
-        <p style={{ margin: 0 }}>If external AI is on and configured, that request also goes to Google’s Gemini API under Google’s terms.</p>
+        <p style={{ margin: 0 }}>If you allow AI, the file is also sent to Google’s Gemini for that one reading.</p>
       </aside>
     </section>
   );
@@ -313,27 +312,27 @@ function DocumentStep({ headingRef, externalAIConsent, onBack, onExtracted, onMa
           Start from your resume
         </h2>
 
-        <fieldset>
+        <fieldset className="choices">
           <legend>How should we read it?</legend>
-          <label className="check">
+          <label className="choice">
             <input type="radio" name="engine" checked={engine === "demo"} onChange={() => setEngine("demo")} />
             <span>
-              <strong>Demo parser — not AI</strong>
-              <span className="hint">Fixed rules and keyword lists. Works offline from any AI service. Best with labelled lines like “Skills: …”.</span>
+              <strong>Simple reader (not AI)</strong>
+              <span className="hint">Looks for labelled lines like “Skills:” and a list of known terms.</span>
             </span>
           </label>
-          <label className="check">
+          <label className="choice">
             <input type="radio" name="engine" checked={engine === "ai"} disabled={!aiAvailable} onChange={() => setEngine("ai")} />
             <span>
-              <strong>AI interpretation (Gemini)</strong>
+              <strong>AI reader (Gemini)</strong>
               <span className="hint">
                 {gemini === null
-                  ? "Checking whether this server has AI configured…"
+                  ? "Checking availability…"
                   : !gemini
-                    ? "Not available: this deployment has no Gemini credentials configured."
+                    ? "Not available in this demo: no Gemini key is configured."
                     : !externalAIConsent
-                      ? "Not available: you didn’t consent to external AI processing. Go back to change that."
-                      : "Sends the document to Google’s Gemini API. Treated as untrusted data; output is validated."}
+                      ? "Not available: you chose not to let AI read your resume."
+                      : "Reads more formats. Instructions hidden in the file are ignored."}
               </span>
             </span>
           </label>
@@ -370,16 +369,16 @@ function DocumentStep({ headingRef, externalAIConsent, onBack, onExtracted, onMa
         {error && (
           <div className="notice notice-error" role="alert">
             <div>
-              <p style={{ fontWeight: 600, marginBottom: 4 }}>We couldn’t read that document</p>
+              <p style={{ fontWeight: 600, marginBottom: 4 }}>We couldn’t read that file</p>
               <p>{error.message}</p>
               <div className="row">
                 {error.canFallback && engine === "ai" && (
                   <button className="btn btn-small btn-secondary" onClick={() => { setEngine("demo"); submit("demo"); }}>
-                    Use the demo parser instead
+                    Use the simple reader instead
                   </button>
                 )}
                 <button className="btn btn-small btn-quiet" onClick={onManual}>
-                  Fill in fields manually
+                  Fill it in myself
                 </button>
               </div>
             </div>
@@ -388,40 +387,38 @@ function DocumentStep({ headingRef, externalAIConsent, onBack, onExtracted, onMa
 
         <div className="row">
           <button className="btn" onClick={() => submit(engine)} disabled={busy} aria-busy={busy}>
-            {busy ? "Reading document…" : "Extract fields for review"}
+            {busy ? "Reading…" : "Read my resume"}
           </button>
           <button className="btn btn-secondary" onClick={() => submit(engine, SAMPLE_RESUME)} disabled={busy}>
-            Use the fictional sample resume
+            Use a sample resume
           </button>
           <button className="btn btn-quiet" onClick={onBack} disabled={busy}>
             Back
           </button>
         </div>
         <p role="status" aria-live="polite" className="small muted" style={{ minHeight: "1.4em", margin: 0 }}>
-          {busy ? (engine === "ai" ? "Sending to Gemini and validating the response…" : "Running the demo parser…") : ""}
+          {busy ? (engine === "ai" ? "Sending to Gemini…" : "Reading your resume…") : ""}
         </p>
       </div>
 
       <aside className="stack">
-        <div className="panel-quiet small">
+        <div className="card-sunk small">
           <p>
-            <strong>Nothing is final yet.</strong> Whatever we extract becomes an editable draft. You review every field before
-            anything is saved or used for matching.
+            <strong>Nothing is saved yet.</strong> You’ll check every detail on the next step.
           </p>
-          <p style={{ margin: 0 }}>The document itself is discarded after reading.</p>
+          <p style={{ margin: 0 }}>Your file is discarded after reading.</p>
         </div>
-        <div className="panel small stack">
-          <h3 style={{ fontSize: "1rem" }}>Testing safety</h3>
+        <div className="card small stack">
+          <h3 style={{ fontSize: "1.05rem" }}>Try a tricky resume</h3>
           <p style={{ margin: 0 }}>
-            Try the sample that hides instructions aimed at an AI (“ignore all previous instructions…”). It’s treated as data,
-            flagged, and dropped.
+            This sample hides instructions aimed at an AI, like “ignore all previous instructions.” Watch them get flagged and left out.
           </p>
           <button className="btn btn-small btn-secondary" onClick={() => submit(engine, SAMPLE_RESUME_WITH_INJECTION)} disabled={busy}>
-            Try the prompt-injection sample
+            Try the tricky resume
           </button>
           <p className="tiny muted" style={{ margin: 0 }}>
-            Downloadable copies: <a href="/samples/sample-resume-fictional.txt">sample resume</a> ·{" "}
-            <a href="/samples/sample-resume-injection-test.txt">injection test</a>
+            Download the samples: <a href="/samples/sample-resume-fictional.txt">sample resume</a>,{" "}
+            <a href="/samples/sample-resume-injection-test.txt">tricky resume</a>
           </p>
         </div>
       </aside>
@@ -460,21 +457,21 @@ function ReviewStep({
   if (!draft.careerGoals.trim()) errors.push("Describe your career goals.");
   if (draft.targetRoles.length + draft.industries.length === 0) errors.push("Add at least one target role or industry.");
   if (availability.length === 0) errors.push("Choose at least one time you’re usually free.");
-  if (!reviewed) errors.push("Confirm you’ve reviewed every field.");
+  if (!reviewed) errors.push("Confirm you’ve checked every detail.");
   const knownSchool = USC_SCHOOLS.some((s) => s.name === draft.school);
 
   return (
     <section aria-labelledby="review-title">
       <div className="row-between" style={{ marginBottom: 16 }}>
         <h2 id="review-title" ref={headingRef} tabIndex={-1}>
-          Review before anything is saved
+          Check your details
         </h2>
         {extraction ? (
           <span className={`tag ${extraction.engine === "gemini" ? "tag-neutral" : "tag-fiction"}`}>
-            {extraction.engine === "gemini" ? "AI interpretation · Gemini" : "Demo parser — not AI"}
+            {extraction.engine === "gemini" ? "Read by AI (Gemini)" : "Read by the simple reader, not AI"}
           </span>
         ) : (
-          <span className="tag tag-neutral">Manual entry</span>
+          <span className="tag tag-neutral">Entered by hand</span>
         )}
       </div>
 
@@ -526,7 +523,7 @@ function ReviewStep({
           </div>
           <ListField label="USC communities" value={draft.communities} onChange={(v) => set("communities", v)} hint="Groups you choose to share, e.g. “Transfer student”, “Club sports”. Optional." />
           <SlotPicker legend="When are you usually free?" hint="Used only to find overlapping times with a mentor." value={availability} onChange={setAvailability} invalid={tried && availability.length === 0} />
-          <fieldset>
+          <fieldset className="choices">
             <legend>Anyone you’d prefer not to be matched with?</legend>
             <p className="hint" style={{ margin: "4px 0 8px" }}>Optional and private. The allocator will never propose these pairings.</p>
             <div className="row" style={{ gap: "6px 18px" }}>
@@ -540,13 +537,13 @@ function ReviewStep({
           </fieldset>
         </div>
 
-        <aside className="panel stack" style={{ position: "sticky", top: 90 }}>
-          <h3>Ready to save?</h3>
-          <label className="check" style={{ borderBottom: "1px solid var(--rule)" }}>
+        <aside className="card stack" style={{ position: "sticky", top: 90 }}>
+          <h3>Look right?</h3>
+          <label className="choice" style={{ borderBottom: "1px solid var(--rule)" }}>
             <input type="checkbox" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />
             <span>
-              <strong>I’ve reviewed every field</strong>
-              <span className="hint">Extracted values can be wrong. Matching uses only what you confirm here.</span>
+              <strong>I’ve checked every detail</strong>
+              <span className="hint">The reader can get things wrong. Matching only uses what you confirm.</span>
             </span>
           </label>
           {tried && errors.length > 0 && (
@@ -566,13 +563,13 @@ function ReviewStep({
                 if (errors.length === 0) onSave({ availability, exclude });
               }}
             >
-              Save reviewed profile
+              Save my profile
             </button>
             <button className="btn btn-quiet" onClick={onBack}>
               Back
             </button>
           </div>
-          <p className="tiny muted" style={{ margin: 0 }}>Saved to this browser only. Demo profiles are treated as fictional.</p>
+          <p className="tiny muted" style={{ margin: 0 }}>Saved in this browser only.</p>
         </aside>
       </div>
     </section>

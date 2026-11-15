@@ -1,127 +1,88 @@
 import Link from "next/link";
+import { createSeedState } from "@/domain/seed";
+import { compatibility } from "@/domain/compatibility";
+import { Person, Thread, shortSchool } from "@/components/People";
 
 export default function Landing() {
+  const seed = createSeedState("2026-11-14T08:00:00.000Z");
+  const s = seed.students.find((x) => x.id === "s-maya")!;
+  const m = seed.mentors.find((x) => x.id === "m-daniel")!;
+  const c = compatibility(s, m);
+  const reasons = c.components.filter((x) => x.points > 0).sort((a, b) => b.points - a.points).slice(0, 3);
+
   return (
     <div className="page">
       <section className="hero" aria-labelledby="hero-title">
         <div>
-          <p className="eyebrow">Trojan Mentor · The Trojan Network, activated</p>
-          <h1 id="hero-title">
-            Your next chapter starts with a <em>conversation.</em>
-          </h1>
+          <h1 id="hero-title">Your next chapter starts with a conversation.</h1>
           <p className="lede">
-            Trojan Mentor pairs students with alumni who have chosen to mentor — matched on where you’re headed, what they
-            know, and the communities you share. Then it helps one introduction become a relationship that keeps moving.
+            Trojan Mentor introduces you to an alum who has already said yes to mentoring, chosen for where you’re headed.
+            Then it helps the two of you keep going.
           </p>
-          <div className="row" style={{ marginTop: 28 }}>
-            <Link className="btn" href="/demo">
-              Start the guided demo
-            </Link>
-            <Link className="btn btn-secondary" href="/how-it-works">
-              How matching works
-            </Link>
+          <div className="row" style={{ marginTop: 30, gap: 12 }}>
+            <Link className="btn" href="/demo">Try the demo</Link>
+            <Link className="btn btn-secondary" href="/how-it-works">How matching works</Link>
           </div>
-          <p className="small muted" style={{ marginTop: 16 }}>
-            No sign-in. A fictional cohort is ready to explore, and everything stays in your browser.
-          </p>
+          <p className="small muted" style={{ marginTop: 16 }}>No sign-in needed. Everyone in the demo is fictional.</p>
         </div>
-        <aside className="hero-aside" aria-label="Why this exists">
-          <p className="quote">
-            “The alumni network is there. What students lack is a reason to reach out, the right person to reach, and a plan
-            for what happens after hello.”
-          </p>
-          <p className="small muted">The problem Trojan Mentor is designed around — an intended benefit we’d validate with students and alumni before claiming impact.</p>
-        </aside>
+
+        <figure className="hero-card" style={{ margin: 0 }} aria-label={`Example match: ${s.name} and ${m.name}`}>
+          <Thread
+            size={64}
+            score={c.score}
+            left={<Person id={s.id} name={s.name} meta={`${shortSchool(s.school)}, class of ${s.gradYear}`} size={64} />}
+            right={<Person id={m.id} name={m.name} meta="Product lead in health tech" size={64} />}
+          />
+          <ul className="reasons">
+            {reasons.map((r) => (
+              <li key={r.key}>
+                <span className="pts num">+{r.points}</span>
+                <span>{r.reason}</span>
+              </li>
+            ))}
+          </ul>
+          <figcaption className="caption">A match from the demo cohort, with the reasons behind it.</figcaption>
+        </figure>
       </section>
 
-      <section className="section" aria-labelledby="journey-title">
-        <div className="row-between" style={{ marginBottom: 24 }}>
-          <h2 id="journey-title">From profile to progress</h2>
-          <p className="muted small" style={{ margin: 0 }}>Every step is working in the demo.</p>
-        </div>
-        <ol className="journey">
+      <section className="section" aria-labelledby="how-title">
+        <h2 id="how-title" style={{ marginBottom: 28 }}>How it works</h2>
+        <ol className="steps-list">
           <li>
             <h3>Share where you’re headed</h3>
-            <p>Upload a resume or start from a sample. Extracted fields are only a draft until you review them.</p>
+            <p>Start from your resume. You check every detail before anything is saved.</p>
           </li>
           <li>
-            <h3>Alumni opt in</h3>
-            <p>Mentors set their own capacity and visibility, and can pause at any time.</p>
+            <h3>We match the whole cohort</h3>
+            <p>Everyone is placed at once, so one student’s top pick never strands another.</p>
           </li>
           <li>
-            <h3>The cohort is allocated</h3>
-            <p>A global optimizer maximizes total fit across everyone, within each mentor’s capacity.</p>
+            <h3>You both say yes</h3>
+            <p>An introduction only happens when you and the alum each approve.</p>
           </li>
           <li>
-            <h3>Both sides say yes</h3>
-            <p>Nothing happens until the student and the mentor each approve the match.</p>
-          </li>
-          <li>
-            <h3>An introduction you approve</h3>
-            <p>Every outgoing message is drafted, shown in full, and sent only after explicit approval.</p>
-          </li>
-          <li>
-            <h3>A first meeting</h3>
-            <p>Find an overlapping time and approve the invitation. Retries never send twice.</p>
-          </li>
-          <li>
-            <h3>Milestones that matter</h3>
-            <p>Preparation and next steps are drawn from the student’s own reviewed goals.</p>
-          </li>
-          <li>
-            <h3>A cohort you can see</h3>
-            <p>Coverage, capacity and progress, calculated from the program’s actual state.</p>
+            <h3>Meet, then keep going</h3>
+            <p>Pick a time you’re both free, then work through next steps built from your goals.</p>
           </li>
         </ol>
       </section>
 
-      <section className="section" aria-labelledby="layers-title">
-        <p className="eyebrow">Honest by design</p>
-        <h2 id="layers-title" style={{ marginBottom: 12 }}>Four different kinds of work, labelled as what they are</h2>
-        <p className="lede" style={{ marginBottom: 28 }}>
-          We don’t call everything “AI.” Each layer is shown separately in the product so students and staff know what
-          produced a result.
-        </p>
-        <div className="layers">
-          <div>
-            <span className="tag tag-neutral">Interpretation</span>
-            <h3>Reading documents</h3>
-            <p>Gemini reads a resume into editable fields when configured and consented to. Otherwise a rule-based demo parser runs — clearly labelled “not AI.”</p>
-          </div>
-          <div>
-            <span className="tag tag-neutral">Scoring</span>
-            <h3>Compatibility</h3>
-            <p>A transparent heuristic: overlapping career direction, expertise, school, communities and availability. Every point is explained.</p>
-          </div>
-          <div>
-            <span className="tag tag-neutral">Allocation</span>
-            <h3>The cohort</h3>
-            <p>Deterministic minimum-cost flow finds the highest total fit. Students below the threshold stay unmatched rather than get a weak match.</p>
-          </div>
-          <div>
-            <span className="tag tag-neutral">Coordination</span>
-            <h3>Next steps</h3>
-            <p>Plan, approve, act, observe. Introductions and invites run through simulated adapters with full history and safe retries.</p>
-          </div>
-        </div>
+      <section className="section promise" aria-labelledby="trust-title">
+        <h2 id="trust-title">No cold messages. No surprises.</h2>
+        <ul>
+          <li><strong>Nothing goes out without your approval.</strong> You read the exact introduction or invitation first.</li>
+          <li><strong>If there’s no good match, we say so.</strong> You won’t be paired with someone just to fill a slot.</li>
+          <li><strong>Alumni set their own limits.</strong> They choose how many students to take and can pause at any time.</li>
+          <li><strong>You can change your mind.</strong> Withdraw consent and pending messages are cancelled right away.</li>
+        </ul>
       </section>
 
-      <section className="section grid-2" aria-labelledby="consent-title">
+      <section className="section card-sunk row-between" aria-label="Try the demo">
         <div>
-          <p className="eyebrow">Consent first</p>
-          <h2 id="consent-title">Three separate choices, all reversible</h2>
+          <h2 style={{ marginBottom: 6 }}>See a full match in about five minutes</h2>
+          <p className="muted" style={{ margin: 0 }}>Onboard a student, match the cohort, approve an introduction and plan a first meeting.</p>
         </div>
-        <div className="stack">
-          <p>
-            Storing your reviewed profile, sending a document to an external AI service, and being visible for matching are
-            three separate decisions. Withdrawing any of them takes effect immediately: open matches are revoked and
-            pending messages are cancelled, so an old approval can never authorize something new.
-          </p>
-          <p className="muted">Raw resumes are never stored. Only the fields you review and save are kept, and in this demo they live in your browser only.</p>
-          <p>
-            <Link href="/privacy">Read how data is handled →</Link>
-          </p>
-        </div>
+        <Link className="btn" href="/demo">Start the demo</Link>
       </section>
     </div>
   );

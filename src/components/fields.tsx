@@ -14,10 +14,10 @@ export function SlotPicker({ value, onChange, legend, hint, invalid }: { value: 
           {hint}
         </p>
       )}
-      <div className="slot-grid" role="group">
+      <div className="slot-grid" role="group" style={{ marginTop: hint ? 0 : 10 }}>
         <span aria-hidden="true" />
         {WEEKDAYS.map((d) => (
-          <span key={d} className="slot-label" style={{ justifyContent: "center", fontWeight: 600 }} aria-hidden="true">
+          <span key={d} className="day" aria-hidden="true">
             {d}
           </span>
         ))}
@@ -38,12 +38,10 @@ function SlotRow({ part, value, toggle }: { part: (typeof DAY_PARTS)[number]; va
       {WEEKDAYS.map((d) => {
         const s = `${d}-${part}` as Slot;
         return (
-          <span key={s}>
-            <label>
-              <input type="checkbox" checked={value.includes(s)} onChange={() => toggle(s)} aria-label={`${d} ${part}`} />
-              <span className="box" aria-hidden="true" />
-            </label>
-          </span>
+          <label key={s}>
+            <input type="checkbox" checked={value.includes(s)} onChange={() => toggle(s)} aria-label={`${d} ${part}`} />
+            <span className="box" aria-hidden="true" />
+          </label>
         );
       })}
     </>

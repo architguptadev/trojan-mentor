@@ -8,13 +8,12 @@ import { roleLabel, useApp, type Role } from "@/lib/store";
 import { inboxFor } from "@/domain/inbox";
 
 const NAV = [
-  { href: "/demo", label: "Guided demo" },
-  { href: "/onboard/student", label: "Onboard a student" },
-  { href: "/onboard/alumni", label: "Onboard alumni" },
+  { href: "/demo", label: "Demo" },
+  { href: "/onboard/student", label: "For students" },
+  { href: "/onboard/alumni", label: "For alumni" },
   { href: "/cohort", label: "Cohort" },
   { href: "/matches", label: "Matches" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/privacy", label: "Privacy" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -26,82 +25,41 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
-      <DemoStrip />
+      <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
-        <div className="page" style={{ position: "relative" }}>
+        <div className="page">
           <Link href="/" className="brand" aria-label="Trojan Mentor home">
             <Mark />
-            <span className="brand-word">
-              Trojan <em>Mentor</em>
-            </span>
+            <span className="brand-word">Trojan Mentor</span>
           </Link>
-          <button
-            className="btn btn-secondary btn-small menu-btn"
-            aria-expanded={open}
-            aria-controls={navId}
-            onClick={() => setOpen((o) => !o)}
-          >
-            {open ? "Close menu" : "Menu"}
+          <button className="btn btn-secondary btn-small menu-btn" aria-expanded={open} aria-controls={navId} onClick={() => setOpen((o) => !o)}>
+            {open ? "Close" : "Menu"}
           </button>
           <nav id={navId} className="nav" aria-label="Main" data-open={open}>
             {NAV.map((n) => (
-              <Link key={n.href} href={n.href} aria-current={pathname === n.href || (n.href !== "/" && pathname.startsWith(n.href + "/")) ? "page" : undefined}>
+              <Link key={n.href} href={n.href} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
                 {n.label}
               </Link>
             ))}
           </nav>
         </div>
       </header>
-      {!isLanding && <RoleBar />}
-      <main id="main" tabIndex={-1}>
-        {children}
-      </main>
+      {!isLanding && <DemoBar />}
+      <main id="main" tabIndex={-1}>{children}</main>
       <Footer />
       <Toast />
     </>
   );
 }
 
-function DemoStrip() {
-  const { reset } = useApp();
+function DemoBar() {
+  const { state, role, setRole, ready, reset } = useApp();
   const [confirming, setConfirming] = useState(false);
-  return (
-    <div className="demo-strip" role="region" aria-label="Demo notice">
-      <div className="page">
-        <span>
-          <strong>Demo mode.</strong> Every person is fictional. Data stays in this browser only.
-        </span>
-        <span className="row" style={{ gap: 10 }}>
-          {confirming ? (
-            <>
-              <span>Replace all local data with the starting cohort?</span>
-              <button className="linklike" onClick={() => { reset(); setConfirming(false); }}>
-                Yes, reset
-              </button>
-              <button className="linklike" onClick={() => setConfirming(false)}>
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button className="linklike" onClick={() => setConfirming(true)}>
-              Reset demo data
-            </button>
-          )}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function RoleBar() {
-  const { state, role, setRole, ready } = useApp();
   const id = useId();
   const value = role.kind === "coordinator" ? "coordinator" : `${role.kind}:${role.id}`;
+  const waiting = ready ? inboxFor(state, role).length : 0;
   return (
-    <div className="role-bar" role="region" aria-label="Simulated role">
+    <div className="demo-bar" role="region" aria-label="Demo controls">
       <div className="page">
         <label htmlFor={id}>Viewing as</label>
         <select
@@ -117,40 +75,31 @@ function RoleBar() {
         >
           <option value="coordinator">Program coordinator</option>
           <optgroup label="Students">
-            {state.students.map((s) => (
-              <option key={s.id} value={`student:${s.id}`}>
-                {s.name}
-              </option>
-            ))}
+            {state.students.map((s) => <option key={s.id} value={`student:${s.id}`}>{s.name}</option>)}
           </optgroup>
-          <optgroup label="Alumni mentors">
-            {state.mentors.map((m) => (
-              <option key={m.id} value={`mentor:${m.id}`}>
-                {m.name}
-              </option>
-            ))}
+          <optgroup label="Alumni">
+            {state.mentors.map((m) => <option key={m.id} value={`mentor:${m.id}`}>{m.name}</option>)}
           </optgroup>
         </select>
-        <span className="tag tag-sim">Simulated role</span>
-        {ready && <InboxLink />}
-        <span className="small" style={{ color: "var(--gold-ink)" }}>
-          Switching roles is a demo convenience, not sign-in. It provides no real authentication.
-        </span>
-        <span className="sr-only" aria-live="polite">
-          Now viewing as {roleLabel(state, role)}
-        </span>
+        {ready && (
+          <Link href="/matches" className={waiting ? "waiting" : "quiet"}>
+            {waiting ? `${waiting} waiting on you` : "Nothing waiting on you"}
+          </Link>
+        )}
+        <span className="spacer" />
+        <span className="quiet hide-sm">Demo roles, no sign-in. Fictional people, stored in this browser.</span>
+        {confirming ? (
+          <span className="row" style={{ gap: 10 }}>
+            <span>Start over?</span>
+            <button className="linklike" onClick={() => { reset(); setConfirming(false); }}>Yes, reset</button>
+            <button className="linklike" onClick={() => setConfirming(false)}>Cancel</button>
+          </span>
+        ) : (
+          <button className="linklike" onClick={() => setConfirming(true)}>Reset demo data</button>
+        )}
+        <span className="sr-only" aria-live="polite">Now viewing as {roleLabel(state, role)}</span>
       </div>
     </div>
-  );
-}
-
-function InboxLink() {
-  const { state, role } = useApp();
-  const n = inboxFor(state, role).length;
-  return (
-    <Link href="/matches" className="small" style={{ fontWeight: 600, color: n ? "var(--cardinal)" : "var(--gold-ink)" }}>
-      {n ? `${n} waiting on you` : "Nothing waiting on you"}
-    </Link>
   );
 }
 
@@ -158,21 +107,14 @@ function Footer() {
   return (
     <footer className="site-footer">
       <div className="page">
-        <div>
-          <p className="serif" style={{ fontSize: "1.1rem", color: "var(--ink)", marginBottom: 6 }}>
-            Trojan Mentor
-          </p>
-          <p style={{ marginBottom: 6 }}>
-            An independent student project built at the AI@USC hackathon, November 14–15, 2026. Not affiliated with,
-            sponsored by, or endorsed by the University of Southern California. No university systems or alumni databases are connected.
-          </p>
-        </div>
-        <div>
-          <p style={{ marginBottom: 6 }}>
-            <Link href="/how-it-works">How matching works</Link> · <Link href="/privacy">Privacy & data</Link>
-          </p>
-          <p>All people and organizations shown are fictional. Metrics reflect only this browser’s demo data.</p>
-        </div>
+        <p>
+          Trojan Mentor is an independent student project from the AI@USC hackathon, November 2026. It isn’t affiliated with or
+          endorsed by the University of Southern California and connects to no university systems. Everyone in the demo is fictional.
+        </p>
+        <p className="row" style={{ gap: 16 }}>
+          <Link href="/how-it-works">How matching works</Link>
+          <Link href="/privacy">Privacy and your data</Link>
+        </p>
       </div>
     </footer>
   );
@@ -192,9 +134,7 @@ function Toast() {
       {visible && (
         <div className="toast" data-tone={visible.tone}>
           <span>{visible.text}</span>
-          <button onClick={() => setVisible(null)} aria-label="Dismiss message">
-            ✕
-          </button>
+          <button onClick={() => setVisible(null)} aria-label="Dismiss message">✕</button>
         </div>
       )}
     </div>

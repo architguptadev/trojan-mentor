@@ -43,26 +43,25 @@ export default function AlumniOnboarding() {
   if (!f.name.trim()) errors.push("Add your name.");
   if (!f.school) errors.push("Choose the USC school you attended.");
   if (f.roles.length + f.industries.length === 0) errors.push("Add at least one role or industry you’ve worked in.");
-  if (f.expertise.length === 0) errors.push("Add at least one area of expertise.");
+  if (f.expertise.length === 0) errors.push("Add at least one thing you can help with.");
   if (availability.length === 0) errors.push("Choose at least one time you’re usually free.");
-  if (!optIn) errors.push("Confirm that you opt in to mentor.");
-  if (!consent.profileProcessing) errors.push("Consent to storing and processing your profile.");
+  if (!optIn) errors.push("Confirm you want to mentor.");
+  if (!consent.profileProcessing) errors.push("Agree to save your profile.");
 
   const saved = savedId ? state.mentors.find((m) => m.id === savedId) : null;
   if (saved)
     return (
       <div className="page">
         <header className="page-head">
-          <p className="eyebrow">Alumni onboarding</p>
           <h1>Thank you, {saved.name.split(" ")[0]}</h1>
           <p className="lede">
-            You’re opted in with room for {saved.capacity} student{saved.capacity > 1 ? "s" : ""}, and your profile is{" "}
-            {saved.visibility === "visible" && saved.consent.matching ? "visible to the allocator" : "not visible to the allocator"}. You’ll approve any proposed match yourself.
+            You’re signed up with room for {saved.capacity} student{saved.capacity > 1 ? "s" : ""}, and your profile is{" "}
+            {saved.visibility === "visible" && saved.consent.matching ? "open to new matches" : "paused for now"}. You’ll approve any match yourself.
           </p>
         </header>
         <div className="row">
-          <button className="btn" onClick={() => { apply((s) => runAllocation(s), "Cohort re-allocated with the new mentor’s capacity."); router.push("/cohort"); }}>
-            Re-allocate the cohort
+          <button className="btn" onClick={() => { apply((s) => runAllocation(s), "Cohort matched again with your capacity included."); router.push("/cohort"); }}>
+            Match the cohort again
           </button>
           <button className="btn btn-secondary" onClick={() => { setRole({ kind: "mentor", id: saved.id }); router.push("/matches"); }}>
             View as {saved.name.split(" ")[0]}
@@ -74,16 +73,16 @@ export default function AlumniOnboarding() {
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">Alumni onboarding</p>
-        <h1>Offer the conversation you wish you’d had</h1>
-        <p className="lede">Set your own capacity and visibility. You’ll see every proposed match before anything is shared, and you can pause at any time.</p>
+        
+        <h1>Be the conversation you wish you’d had</h1>
+        <p className="lede">Choose how many students you can take. You’ll approve every match before anyone is introduced, and you can pause whenever you need to.</p>
       </header>
 
       <div className="split">
         <div className="stack" style={{ ["--stack" as string]: "18px" }}>
           <div className="grid-2">
             <TextField label="Full name" value={f.name} onChange={(v) => set("name", v)} required invalid={tried && !f.name.trim()} maxLength={80} />
-            <TextField label="Current headline" value={f.headline} onChange={(v) => set("headline", v)} hint="e.g. Product lead, a health-tech company" maxLength={120} />
+            <TextField label="What you do now" value={f.headline} onChange={(v) => set("headline", v)} hint="e.g. Product lead, a health-tech company" maxLength={120} />
           </div>
           <div className="grid-2">
             <div className="field">
@@ -99,9 +98,9 @@ export default function AlumniOnboarding() {
             </div>
           </div>
 
-          <fieldset>
-            <legend>Career trajectory</legend>
-            <p className="hint" style={{ margin: "4px 0 10px" }}>Most recent last. Students use this to prepare questions.</p>
+          <fieldset className="choices">
+            <legend>Your path so far</legend>
+            <p className="hint" style={{ margin: "4px 0 10px" }}>Oldest first. Students use this to prepare questions.</p>
             <div className="stack" style={{ ["--stack" as string]: "10px" }}>
               {f.trajectory.map((t, i) => (
                 <div key={i} className="grid-3" style={{ gap: 10 }}>
@@ -122,14 +121,14 @@ export default function AlumniOnboarding() {
             <ListField label="Industries" value={f.industries} onChange={(v) => set("industries", v)} />
           </div>
           <div className="grid-2">
-            <ListField label="Expertise you can share" value={f.expertise} onChange={(v) => set("expertise", v)} required invalid={tried && f.expertise.length === 0} />
-            <ListField label="USC communities" value={f.communities} onChange={(v) => set("communities", v)} hint="Optional. Groups you choose to share." />
+            <ListField label="What you can help with" value={f.expertise} onChange={(v) => set("expertise", v)} required invalid={tried && f.expertise.length === 0} />
+            <ListField label="Communities" value={f.communities} onChange={(v) => set("communities", v)} hint="Optional, e.g. first-generation college student." />
           </div>
-          <TextField label="Mentoring preferences" value={f.mentoringPreferences} onChange={(v) => set("mentoringPreferences", v)} multiline hint="Who you’d most like to help, and how you like to meet." />
+          <TextField label="How you like to mentor" value={f.mentoringPreferences} onChange={(v) => set("mentoringPreferences", v)} multiline hint="Who you’d most like to help, and how often you’d like to meet." />
           <SlotPicker legend="When are you usually free?" value={availability} onChange={setAvailability} invalid={tried && availability.length === 0} />
-          <fieldset>
-            <legend>Students you shouldn’t be matched with</legend>
-            <p className="hint" style={{ margin: "4px 0 8px" }}>Optional — for example, someone you supervise or are related to.</p>
+          <fieldset className="choices">
+            <legend>Anyone you shouldn’t be matched with?</legend>
+            <p className="hint" style={{ margin: "4px 0 8px" }}>Optional. For example, someone you manage or are related to.</p>
             <div className="row" style={{ gap: "6px 18px" }}>
               {state.students.map((s) => (
                 <label key={s.id} className="small row" style={{ gap: 8 }}>
@@ -141,36 +140,36 @@ export default function AlumniOnboarding() {
           </fieldset>
         </div>
 
-        <aside className="panel stack" style={{ position: "sticky", top: 90 }}>
-          <h3>Participation</h3>
+        <aside className="card stack" style={{ position: "sticky", top: 90 }}>
+          <h3>Your availability as a mentor</h3>
           <div className="field">
             <label htmlFor={capId}>How many students this term?</label>
             <select id={capId} value={f.capacity} onChange={(e) => set("capacity", Number(e.target.value))}>
               {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
-          <fieldset>
-            <legend>Profile visibility</legend>
-            <label className="check">
+          <fieldset className="choices">
+            <legend>Open to new matches?</legend>
+            <label className="choice">
               <input type="radio" name="vis" checked={visibility === "visible"} onChange={() => setVisibility("visible")} />
-              <span><strong>Visible to the allocator</strong><span className="hint">You may be proposed to students. You still approve each match.</span></span>
+              <span><strong>Yes</strong><span className="hint">You may be suggested to students. You approve each match.</span></span>
             </label>
-            <label className="check">
+            <label className="choice">
               <input type="radio" name="vis" checked={visibility === "paused"} onChange={() => setVisibility("paused")} />
-              <span><strong>Paused</strong><span className="hint">Saved, but never proposed until you switch back.</span></span>
+              <span><strong>Not right now</strong><span className="hint">Your profile is saved but you won’t be suggested.</span></span>
             </label>
           </fieldset>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} />
-            <span><strong>I opt in to mentor students through this program</strong><span className="hint">Required. Nobody is listed as a mentor without this.</span></span>
+            <span><strong>I want to mentor students through Trojan Mentor</strong><span className="hint">Required. No one is listed as a mentor without saying yes.</span></span>
           </label>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={consent.profileProcessing} onChange={(e) => setConsent({ ...consent, profileProcessing: e.target.checked })} />
-            <span><strong>Store and process my profile</strong><span className="hint">Required. Kept in this browser only in the demo.</span></span>
+            <span><strong>Save my profile</strong><span className="hint">Required. In this demo it stays in this browser.</span></span>
           </label>
-          <label className="check">
+          <label className="choice">
             <input type="checkbox" checked={consent.matching} onChange={(e) => setConsent({ ...consent, matching: e.target.checked })} />
-            <span><strong>Participate in matching</strong><span className="hint">Turn off to stay listed without being proposed.</span></span>
+            <span><strong>Include me in matching</strong><span className="hint">Turn off to stay signed up without new matches.</span></span>
           </label>
           {tried && errors.length > 0 && (
             <div className="notice notice-error" role="alert">
@@ -206,10 +205,10 @@ export default function AlumniOnboarding() {
                 fictional: true,
                 createdAt: at,
               };
-              if (apply((s) => ({ ...s, mentors: [...s.mentors, m], auditLog: [...s.auditLog, { at, message: `${m.name} opted in as a mentor (capacity ${m.capacity}, ${m.visibility}).` }] }), "Mentor profile saved.")) setSavedId(id);
+              if (apply((s) => ({ ...s, mentors: [...s.mentors, m], auditLog: [...s.auditLog, { at, message: `${m.name} opted in as a mentor (capacity ${m.capacity}, ${m.visibility}).` }] }), "You’re signed up to mentor.")) setSavedId(id);
             }}
           >
-            Save and opt in
+            Sign up to mentor
           </button>
         </aside>
       </div>

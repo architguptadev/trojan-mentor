@@ -53,14 +53,14 @@ describe("seed cohort allocation", () => {
     const st = runAllocation(fresh(), { now: T });
     const riley = st.allocationRuns[0].unmatched.find((u) => u.studentId === "s-riley");
     expect(riley).toBeDefined();
-    expect(riley!.reason).toMatch(/threshold/);
+    expect(riley!.reason).toMatch(/close enough fit/);
     expect(st.matches.some((m) => m.studentId === "s-riley")).toBe(false);
   });
 
   it("explains capacity-driven unmatched outcomes", () => {
     const st = runAllocation(fresh(), { now: T });
     const kenji = st.allocationRuns[0].unmatched.find((u) => u.studentId === "s-kenji");
-    expect(kenji?.reason).toMatch(/capacity/);
+    expect(kenji?.reason).toMatch(/places went to stronger matches/);
   });
 
   it("drops students who withdraw matching consent from the pool", () => {

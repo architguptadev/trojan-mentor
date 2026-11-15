@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { roleLabel, useApp } from "@/lib/store";
 import { Loading, StageTag } from "@/components/bits";
+import { Person, Thread, shortSchool } from "@/components/People";
 import { inboxFor } from "@/domain/inbox";
 
 export default function MatchesPage() {
@@ -14,22 +15,19 @@ export default function MatchesPage() {
   const inbox = inboxFor(state, role);
   const S = (id: string) => state.students.find((s) => s.id === id);
   const M = (id: string) => state.mentors.find((m) => m.id === id);
-  const needsMe = (m: (typeof mine)[number]) =>
-    m.stage === "proposed" && ((role.kind === "student" && m.student.decision === "pending") || (role.kind === "mentor" && m.mentor.decision === "pending"));
+  const who = role.kind === "coordinator" ? "the coordinator" : roleLabel(state, role).split(" ")[0];
 
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">Matches</p>
-        <h1>{role.kind === "coordinator" ? "Every match in the cohort" : `Matches for ${roleLabel(state, role)}`}</h1>
-        <p className="lede">Open a match to approve it, coordinate the first meeting and track progress.</p>
+        <h1>{inbox.length ? `${inbox.length} thing${inbox.length > 1 ? "s" : ""} waiting on ${role.kind === "coordinator" ? "you" : who}` : `Nothing waiting on ${who}`}</h1>
+        <p className="lede">{role.kind === "coordinator" ? "Every match in the cohort, and what needs you next." : `Matches for ${roleLabel(state, role)}.`}</p>
       </header>
-      <section aria-labelledby="inbox-title" style={{ marginBottom: 36 }}>
-        <h2 id="inbox-title" style={{ fontSize: "1.4rem", marginBottom: 10 }}>Waiting on you</h2>
-        {inbox.length === 0 ? (
-          <p className="muted small">Nothing needs {role.kind === "coordinator" ? "the coordinator" : roleLabel(state, role).split(" ")[0]} right now.</p>
-        ) : (
-          <ul className="checklist" style={{ borderTopWidth: 1 }}>
+
+      {inbox.length > 0 && (
+        <section aria-labelledby="inbox-title" style={{ marginBottom: 48 }}>
+          <h2 id="inbox-title" className="sr-only">Waiting on you</h2>
+          <ol className="todo">
             {inbox.map((i, n) => (
               <li key={i.key} data-next={n === 0}>
                 <span className="mark" aria-hidden="true">{n + 1}</span>
@@ -37,52 +35,43 @@ export default function MatchesPage() {
                 <Link className={`btn btn-small ${n === 0 ? "" : "btn-secondary"}`} href={i.href}>Open<span className="sr-only">: {i.text}</span></Link>
               </li>
             ))}
-          </ul>
+          </ol>
+        </section>
+      )}
+
+      <section aria-labelledby="all-title">
+        <h2 id="all-title" style={{ marginBottom: 16 }}>{role.kind === "coordinator" ? "All matches" : "Your matches"}</h2>
+        {mine.length === 0 ? (
+          <div className="empty">
+            <h3>No matches yet</h3>
+            <p>
+              {state.allocationRuns.length === 0
+                ? "The cohort hasn’t been matched yet."
+                : role.kind === "coordinator"
+                  ? "The last round didn’t suggest any pairs."
+                  : "The last round didn’t find a good match here. The cohort page explains why."}
+            </p>
+            <Link className="btn btn-secondary" href="/cohort">Go to the cohort</Link>
+          </div>
+        ) : (
+          <div className="pairings">
+            {mine.map((m) => {
+              const s = S(m.studentId);
+              const mt = M(m.mentorId);
+              if (!s || !mt) return null;
+              return (
+                <article key={m.id} className="pairing" aria-label={`${s.name} and ${mt.name}`} style={{ gridTemplateColumns: "minmax(0, 1.6fr) minmax(0, 1fr) auto" }}>
+                  <Thread score={m.score} left={<Person id={s.id} name={s.name} meta={shortSchool(s.school)} />} right={<Person id={mt.id} name={mt.name} meta={mt.headline.replace(/,.*$/, "")} />} />
+                  <StageTag stage={m.stage} />
+                  <Link className="btn btn-small btn-secondary" href={`/matches/${m.id}`}>
+                    Open<span className="sr-only"> match between {s.name} and {mt.name}</span>
+                  </Link>
+                </article>
+              );
+            })}
+          </div>
         )}
       </section>
-      <h2 style={{ fontSize: "1.4rem", marginBottom: 10 }}>{role.kind === "coordinator" ? "All matches" : "Your matches"}</h2>
-      {mine.length === 0 ? (
-        <div className="empty">
-          <h3>No matches here yet</h3>
-          <p>
-            {state.allocationRuns.length === 0
-              ? "The cohort hasn’t been allocated. A coordinator runs allocation to propose pairs."
-              : role.kind === "coordinator"
-                ? "The last allocation didn’t propose any pairs."
-                : "The last allocation didn’t propose a match for this person. The cohort page explains why."}
-          </p>
-          <Link className="btn btn-secondary" href="/cohort">Go to the cohort</Link>
-        </div>
-      ) : (
-        <div className="table-wrap">
-          <table>
-            <caption className="sr-only">Matches</caption>
-            <thead>
-              <tr>
-                <th scope="col">Student</th>
-                <th scope="col">Mentor</th>
-                <th scope="col">Score</th>
-                <th scope="col">Stage</th>
-                <th scope="col"><span className="sr-only">Open</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {mine.map((m) => (
-                <tr key={m.id}>
-                  <td style={{ minWidth: 150 }}><span className="serif">{S(m.studentId)?.name}</span></td>
-                  <td style={{ minWidth: 150 }}><span className="serif">{M(m.mentorId)?.name}</span></td>
-                  <td className="num">{m.score}</td>
-                  <td style={{ minWidth: 170 }}>
-                    <StageTag stage={m.stage} />
-                    {needsMe(m) && <div className="small" style={{ color: "var(--cardinal)", marginTop: 4, fontWeight: 600 }}>Needs your decision</div>}
-                  </td>
-                  <td><Link href={`/matches/${m.id}`}>Open<span className="sr-only"> match between {S(m.studentId)?.name} and {M(m.mentorId)?.name}</span> →</Link></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

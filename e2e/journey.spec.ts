@@ -15,38 +15,39 @@ test.describe.configure({ mode: "serial" });
 test("complete journey: onboard → allocate → bilateral approval → intro with failure+retry → meeting → milestones → dashboard, persisting across refresh", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Your next chapter starts with a conversation.");
+  await page.waitForTimeout(1300);
   await shot(page, "01-landing");
-  await page.getByRole("link", { name: "Start the guided demo" }).click();
-  await expect(page.getByRole("heading", { name: /Walk the whole journey/ })).toBeVisible();
+  await page.getByRole("link", { name: "Try the demo" }).click();
+  await expect(page.getByRole("heading", { name: /Walk through a full match/ })).toBeVisible();
   await shot(page, "02-guided-demo");
 
   // 1. Student onboarding with the deterministic demo parser
   await page.getByRole("button", { name: "Open student onboarding" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(alerts(page)).toContainText("needed to continue");
-  await page.getByRole("checkbox", { name: /Store and process my reviewed profile/ }).check();
+  await page.getByRole("checkbox", { name: /Save my profile/ }).check();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: "Use the fictional sample resume" }).click();
-  await expect(page.getByRole("heading", { name: "Review before anything is saved" })).toBeVisible();
-  await expect(page.getByText("Demo parser — not AI").first()).toBeVisible();
+  await page.getByRole("button", { name: "Use a sample resume" }).click();
+  await expect(page.getByRole("heading", { name: "Check your details" })).toBeVisible();
+  await expect(page.getByText("Read by the simple reader, not AI").first()).toBeVisible();
   await expect(page.getByLabel(/Full name/)).toHaveValue("Imani Castellanos-Reed");
   // Saving is blocked until availability + review confirmation
-  await page.getByRole("button", { name: "Save reviewed profile" }).click();
-  await expect(alerts(page).filter({ hasText: "Confirm you’ve reviewed" })).toBeVisible();
+  await page.getByRole("button", { name: "Save my profile" }).click();
+  await expect(alerts(page).filter({ hasText: "Confirm you’ve checked" })).toBeVisible();
   await page.getByRole("checkbox", { name: "Tue evening" }).check();
   await page.getByRole("checkbox", { name: "Thu evening" }).check();
   await shot(page, "03-review-extracted-profile");
-  await page.getByRole("checkbox", { name: /I’ve reviewed every field/ }).check();
-  await page.getByRole("button", { name: "Save reviewed profile" }).click();
+  await page.getByRole("checkbox", { name: /I’ve checked every detail/ }).check();
+  await page.getByRole("button", { name: "Save my profile" }).click();
   await expect(page.getByRole("heading", { name: /profile is saved/ })).toBeVisible();
 
   // 2. Allocate
-  await page.getByRole("button", { name: "Re-allocate the cohort" }).click();
+  await page.getByRole("button", { name: "Match the cohort again" }).click();
   await expect(page).toHaveURL(/\/cohort/);
   await expect(page.getByRole("heading", { name: "Pairings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Not matched this round" })).toBeVisible();
-  await expect(page.locator("table").first()).toContainText("Riley Brannigan-Cho");
-  await expect(page.getByText(/threshold/).first()).toBeVisible();
+  await expect(page.locator("main").getByText("Riley Brannigan-Cho").first()).toBeVisible();
+  await expect(page.getByText(/close enough fit/).first()).toBeVisible();
   await shot(page, "04b-cohort-after-onboarding");
   let st = await state(page);
   expect(st.allocationRuns).toHaveLength(1);
@@ -56,7 +57,7 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   const maya = st.matches.find((m: { studentId: string; mentorId: string }) => m.studentId === "s-maya");
   expect(maya.mentorId).toBe("m-daniel");
   await page.goto(`/matches/${maya.id}`);
-  await expect(page.getByRole("heading", { name: "Both sides decide" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Both need to say yes" })).toBeVisible();
   // Coordinator cannot approve on behalf of a party
   await expect(page.getByRole("button", { name: "Approve match" })).toHaveCount(0);
   await asRole(page, "student:s-maya");
@@ -69,15 +70,15 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   await expect(page.getByText("Both approved", { exact: true }).first()).toBeVisible();
 
   // 4. Introduction: approval of the exact draft, failure, retry without duplicate
-  await expect(page.getByText(/Switch “Viewing as” to Program coordinator/)).toBeVisible();
+  await expect(page.getByText(/Waiting for the program coordinator to approve/)).toBeVisible();
   await asRole(page, "coordinator");
   await page.getByRole("button", { name: "Approve this exact draft" }).click();
-  await page.getByLabel("Demo control: next simulated attempt").selectOption("reject");
+  await page.getByLabel(/next attempt will/).selectOption("reject");
   await page.getByRole("button", { name: "Send via simulated email" }).click();
-  await expect(page.getByText("Failed — safe to retry")).toBeVisible();
+  await expect(page.getByText("Failed, safe to retry")).toBeVisible();
   st = await state(page);
   expect(st.outbox).toHaveLength(0);
-  await page.getByLabel("Demo control: next simulated attempt").selectOption("lost_ack");
+  await page.getByLabel(/next attempt will/).selectOption("lost_ack");
   await page.getByRole("button", { name: /Retry \(attempt 2\)/ }).click();
   await expect(page.getByRole("button", { name: /Retry \(attempt 3\)/ })).toBeVisible();
   st = await state(page);
@@ -100,7 +101,7 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
 
   // 5. Meeting
   await asRole(page, "student:s-maya");
-  await page.getByRole("radio", { name: "Tue evening" }).check();
+  await page.getByRole("radio", { name: "Tuesday evenings" }).check();
   await page.getByRole("button", { name: "Draft calendar invitation" }).click();
   await page.getByRole("button", { name: "Approve this exact draft" }).click();
   await page.getByRole("button", { name: "Create via simulated calendar" }).click();
@@ -122,17 +123,16 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   // 7. Dashboard reflects actual state
   await page.getByRole("link", { name: "Dashboard" }).first().click();
   const ledger = page.getByLabel("Cohort figures");
-  await expect(ledger.getByText("Introductions recorded (simulated)")).toBeVisible();
-  const figure = (title: string) => ledger.locator(".ledger-row", { hasText: title }).locator(".ledger-figure");
-  await expect(figure("Introductions recorded")).toHaveText("1");
-  await expect(figure("First meetings confirmed")).toContainText("1");
-  await expect(figure("Development milestones")).toContainText("2of 4");
-  await expect(figure("approved by both")).toContainText("1");
+  const figure = (label: string) => ledger.locator(".funnel-row", { has: page.getByText(label, { exact: true }) }).locator(".funnel-n");
+  await expect(figure("Introduced")).toHaveText("1");
+  await expect(figure("Met")).toHaveText("1");
+  await expect(figure("Both said yes")).toHaveText("1");
+  await expect(ledger).toContainText("2 of 4 milestones done");
   await shot(page, "07-dashboard");
 
   // Refresh again: everything persists
   await page.reload();
-  await expect(figure("Development milestones")).toContainText("2of 4");
+  await expect(ledger).toContainText("2 of 4 milestones done");
 });
 
 test("consent withdrawal revokes the match and blocks stale approvals", async ({ page }) => {
@@ -157,9 +157,9 @@ test("consent withdrawal revokes the match and blocks stale approvals", async ({
   const exported = JSON.parse(await (await import("node:fs/promises")).readFile((await json.path())!, "utf8"));
   expect(exported.profile.id).toBe("m-priya");
   expect(exported.matches).toHaveLength(2);
-  await page.getByRole("checkbox", { name: /Visible for matching/ }).uncheck();
+  await page.getByRole("checkbox", { name: /Include me in matching/ }).uncheck();
   await page.goto(`/matches/${m.id}`);
-  await expect(page.getByText("Revoked — consent withdrawn").first()).toBeVisible();
+  await expect(page.getByText("Revoked after consent was withdrawn").first()).toBeVisible();
   await expect(page.getByText("Cancelled", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /Send via simulated email/ })).toHaveCount(0);
   const after = await state(page);
@@ -170,14 +170,15 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
   await page.goto("/cohort");
   await page.getByRole("button", { name: "Run allocation" }).first().click();
   await expect(page.getByRole("heading", { name: "Pairings" })).toBeVisible();
-  await expect(page.getByText(/Greedy matching \(best pair first\) would total 425/)).toBeVisible();
-  await page.locator("#result-title").scrollIntoViewIfNeeded();
+  await expect(page.locator(".compare")).toContainText("425");
+  await expect(page.locator(".compare")).toContainText("461");
+  await page.locator("#why-title").scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -140));
   await shot(page, "04-cohort-allocation");
   // What-if insights: an extra seat for Elena matches Kenji; Riley's direction is uncovered
   const insights = page.locator("section", { has: page.getByRole("heading", { name: "Where more mentors would help" }) });
-  await expect(insights.locator("tr", { hasText: "Elena Marisol Quintana" })).toContainText("Kenji");
-  await expect(insights).toContainText("Riley is aiming for marine science and research");
+  await expect(insights).toContainText("One more place with Elena would match Kenji");
+  await expect(insights).toContainText("No alum covers marine science and research");
   await insights.scrollIntoViewIfNeeded();
   await shot(page, "09-cohort-insights");
   // CSV export
@@ -189,7 +190,7 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
   await asRole(page, "mentor:m-elena");
   await expect(page.getByRole("link", { name: "1 waiting on you" })).toBeVisible();
   await page.getByRole("link", { name: "1 waiting on you" }).click();
-  await expect(page.getByRole("heading", { name: "Waiting on you" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("1 thing waiting on Elena");
   await expect(page.getByText(/Decide on your proposed match with Lucía/).first()).toBeVisible();
   await shot(page, "10-inbox");
   const st = await state(page);
@@ -203,24 +204,25 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
 
 test("document validation errors are shown clearly", async ({ page }) => {
   await page.goto("/onboard/student");
-  await page.getByRole("checkbox", { name: /Store and process my reviewed profile/ }).check();
+  await page.getByRole("checkbox", { name: /Save my profile/ }).check();
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Upload a resume").setInputFiles({ name: "resume.pdf", mimeType: "application/pdf", buffer: Buffer.from("this is not a pdf at all") });
-  await page.getByRole("button", { name: "Extract fields for review" }).click();
+  await page.getByRole("button", { name: "Read my resume" }).click();
   await expect(alerts(page)).toContainText("doesn’t look like a valid PDF");
   await page.getByLabel("Upload a resume").setInputFiles({ name: "resume.docx", mimeType: "application/msword", buffer: Buffer.from("x") });
   await expect(alerts(page)).toContainText("Upload a PDF, .txt or .md file");
   // Injection sample is flagged
-  await page.getByRole("button", { name: "Try the prompt-injection sample" }).click();
+  await page.getByRole("button", { name: "Try the tricky resume" }).click();
   await expect(page.getByText(/treated as data, not followed/)).toBeVisible();
   await expect(page.getByLabel("Skills")).toHaveValue("Financial modeling, Pitching");
   await shot(page, "08-injection-flagged");
   // AI option is honestly unavailable without credentials
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByText(/no Gemini credentials configured|didn’t consent to external AI/)).toBeVisible();
+  await expect(page.getByText(/no Gemini key is configured|chose not to let AI/)).toBeVisible();
 });
 
 test("automated accessibility scan (axe) on key pages", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" }); // measure settled colors, not mid-animation frames
   for (const path of ["/", "/demo", "/onboard/student", "/onboard/alumni", "/cohort", "/matches", "/dashboard", "/privacy", "/how-it-works"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");

@@ -51,9 +51,10 @@ export function sharedSlots(a: Slot[], b: Slot[]): Slot[] {
   return a.filter((s) => bs.has(s));
 }
 
+const DAY_NAMES: Record<string, string> = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
 export function slotLabel(s: Slot): string {
   const [d, p] = s.split("-");
-  return `${d} ${p}`;
+  return `${DAY_NAMES[d] ?? d} ${p}s`;
 }
 
 export function compatibility(s: StudentProfile, m: MentorProfile): Compatibility {
@@ -69,7 +70,7 @@ export function compatibility(s: StudentProfile, m: MentorProfile): Compatibilit
     max: W.careerDirection.max,
     evidence: dir.map(labelFor),
     reason: dir.length
-      ? `${first(s.name)} is aiming for ${list(dir.map(labelFor))}; ${first(m.name)} has worked in ${dir.length > 1 ? "those areas" : "that area"}.`
+      ? `${first(s.name)} is aiming for ${list(dir.map((x) => lower(labelFor(x))))}, where ${first(m.name)} has worked.`
       : "",
   });
 
@@ -84,7 +85,7 @@ export function compatibility(s: StudentProfile, m: MentorProfile): Compatibilit
     max: W.expertise.max,
     evidence: exp.map(labelFor),
     reason: exp.length
-      ? `${first(m.name)} lists ${list(exp.map(labelFor))} as expertise, which ${first(s.name)} included in skills or interests.`
+      ? `${first(m.name)} can help with ${list(exp.map((x) => lower(labelFor(x))))}, which ${first(s.name)} listed too.`
       : "",
   });
 
@@ -95,7 +96,7 @@ export function compatibility(s: StudentProfile, m: MentorProfile): Compatibilit
     points: sameSchool ? W.school.max : 0,
     max: W.school.max,
     evidence: sameSchool ? [s.school] : [],
-    reason: sameSchool ? `Both studied in ${s.school}.` : "",
+    reason: sameSchool ? `Both came through the ${s.school}.` : "",
   });
 
   const comm = intersect(canonicalSet(s.communities), canonicalSet(m.communities));
@@ -106,7 +107,7 @@ export function compatibility(s: StudentProfile, m: MentorProfile): Compatibilit
     points: commPts,
     max: W.communities.max,
     evidence: comm.map(labelFor),
-    reason: comm.length ? `Both listed ${list(comm.map(labelFor))}.` : "",
+    reason: comm.length ? `They share ${comm.length > 1 ? "communities" : "a community"}: ${list(comm.map((x) => lower(labelFor(x))))}.` : "",
   });
 
   const slots = sharedSlots(s.availability, m.availability);
@@ -118,12 +119,22 @@ export function compatibility(s: StudentProfile, m: MentorProfile): Compatibilit
     max: W.availability.max,
     evidence: slots.map(slotLabel),
     reason: slots.length
-      ? `Overlapping time${slots.length > 1 ? "s" : ""}: ${list(slots.slice(0, 3).map(slotLabel))}.`
+      ? `Both are usually free ${list(slots.slice(0, 3).map(slotLabel))}.`
       : "",
   });
 
   const score = components.reduce((a, c) => a + c.points, 0);
   return { score, components };
+}
+
+const PROPER = new Set(["Python", "JavaScript / TypeScript", "UX", "ML", "AI", "SQL", "R"]);
+/** Sentence-case a concept label for use mid-sentence, keeping proper nouns and acronyms. */
+export function lower(label: string) {
+  if (PROPER.has(label)) return label;
+  return label
+    .split(" ")
+    .map((w) => (w.length > 1 && w === w.toUpperCase() ? w : w.charAt(0).toLowerCase() + w.slice(1)))
+    .join(" ");
 }
 
 function first(name: string) {

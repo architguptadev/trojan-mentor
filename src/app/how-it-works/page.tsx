@@ -9,20 +9,20 @@ export default function HowItWorks() {
   return (
     <div className="page">
       <header className="page-head">
-        <p className="eyebrow">How it works</p>
-        <h1>What produces each result, and how far to trust it</h1>
-        <p className="lede">Trojan Mentor separates four kinds of work. Each is labelled in the product so nobody mistakes a rule for a model, or a score for a prediction.</p>
+        
+        <h1>What does the work, and how much to trust it</h1>
+        <p className="lede">Four separate pieces, each labeled in the product for what it is. Only the first one uses AI.</p>
       </header>
 
       <section className="section" style={{ paddingTop: 0 }} aria-labelledby="l1">
         <div className="grid-2">
           <div>
-            <p className="eyebrow">1 · AI interpretation</p>
+            <p className="tag tag-sim" style={{ marginBottom: 10 }}>Uses AI, only with permission</p>
             <h2 id="l1">Reading a resume into fields</h2>
           </div>
           <div className="stack">
             <p>When a deployment has a Gemini API key and the student has consented to external AI processing, the server sends the document to Gemini with a fixed JSON schema and an instruction to treat the document as untrusted data. The response is validated, sanitized and bounded before the student sees it.</p>
-            <p>Without credentials or consent, a deterministic <strong>demo parser — not AI</strong> reads labelled lines (“Skills: …”) and matches a keyword list. Either way, the output is only a draft: the student must review and confirm every field before anything is saved or used.</p>
+            <p>Without credentials or consent, a <strong>simple rule-based reader (not AI)</strong> reads labelled lines (“Skills: …”) and matches a keyword list. Either way, the output is only a draft: the student must review and confirm every field before anything is saved or used.</p>
             <p className="small muted">Handled failure modes: oversized or unsupported files, fake or damaged PDFs, invalid text encoding, scanned documents without text, model timeouts, quota and auth errors, non-JSON or off-schema output, and instruction-like text inside documents.</p>
           </div>
         </div>
@@ -31,9 +31,9 @@ export default function HowItWorks() {
       <section className="section" aria-labelledby="l2">
         <div className="grid-2">
           <div>
-            <p className="eyebrow">2 · Compatibility scoring</p>
-            <h2 id="l2">A heuristic you can read</h2>
-            <p className="muted" style={{ marginTop: 12 }}>Integer points from 0 to 100. Not a probability, not a prediction of mentorship success, and not model confidence.</p>
+            <p className="tag tag-neutral" style={{ marginBottom: 10 }}>No AI: a points system</p>
+            <h2 id="l2">A fit score you can read</h2>
+            <p className="muted" style={{ marginTop: 12 }}>Points from 0 to 100. A rough guide to fit, not a prediction of how the mentorship will go.</p>
           </div>
           <div>
             <div className="table-wrap">
@@ -48,7 +48,7 @@ export default function HowItWorks() {
                 </tbody>
               </table>
             </div>
-            <p className="small muted" style={{ marginTop: 10 }}>Terms are normalized through a small, hand-written synonym list (e.g. “APM” and “product manager” both map to product management). Unknown terms only match exactly.</p>
+            <p className="small muted" style={{ marginTop: 10 }}>Terms are normalized through a small, hand-written synonym list (so “APM” and “product manager” count as the same thing). Unknown terms only match exactly.</p>
           </div>
         </div>
       </section>
@@ -56,7 +56,7 @@ export default function HowItWorks() {
       <section className="section" aria-labelledby="l3">
         <div className="grid-2">
           <div>
-            <p className="eyebrow">3 · Deterministic allocation</p>
+            <p className="tag tag-neutral" style={{ marginBottom: 10 }}>No AI: an optimizer</p>
             <h2 id="l3">Optimizing the whole cohort</h2>
           </div>
           <div className="stack">
@@ -70,7 +70,7 @@ export default function HowItWorks() {
       <section className="section" aria-labelledby="l4">
         <div className="grid-2">
           <div>
-            <p className="eyebrow">4 · Approved coordination</p>
+            <p className="tag tag-neutral" style={{ marginBottom: 10 }}>No AI: people approve each step</p>
             <h2 id="l4">Plan, approve, act, observe</h2>
           </div>
           <div className="stack">
@@ -84,7 +84,7 @@ export default function HowItWorks() {
       <section className="section" aria-labelledby="limits">
         <div className="grid-2">
           <div>
-            <p className="eyebrow">Limits</p>
+            
             <h2 id="limits">What this prototype is not</h2>
           </div>
           <ul className="stack" style={{ paddingLeft: 18, margin: 0 }}>

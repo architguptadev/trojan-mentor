@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Public_Sans } from "next/font/google";
+import { Hanken_Grotesk, Newsreader } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "@/lib/store";
 import { Shell } from "@/components/Shell";
 
-const serif = Fraunces({ subsets: ["latin"], variable: "--font-serif", axes: ["opsz", "SOFT"], display: "swap" });
-const sans = Public_Sans({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+const serif = Newsreader({ subsets: ["latin"], variable: "--font-serif", axes: ["opsz"], style: ["normal", "italic"], display: "swap" });
+const sans = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Trojan Mentor — The Trojan Network, activated", template: "%s · Trojan Mentor" },
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   icons: { icon: "/icon.svg" },
 };
 
-export const viewport: Viewport = { themeColor: "#8a1c2b", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#7d1428", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
