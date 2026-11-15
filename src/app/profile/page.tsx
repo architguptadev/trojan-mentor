@@ -46,14 +46,13 @@ function SchoolSelect({ value, onChange }: { value: string; onChange: (v: string
 
 function SaveBar({ onSave, note }: { onSave: () => void; note: string }) {
   return (
-    <aside className="card stack" style={{ position: "sticky", top: 90, ["--stack" as string]: "12px" }}>
-      <h3>Save changes</h3>
-      <p className="small muted" style={{ margin: 0 }}>{note}</p>
-      <div className="row">
+    <div style={{ marginTop: 28, borderTop: "1px solid var(--line)", paddingTop: 20 }}>
+      <div className="actions">
         <button className="btn" onClick={onSave}>Save changes</button>
-        <Link className="btn btn-quiet" href="/home">Cancel</Link>
+        <Link className="link" href="/home">Cancel</Link>
       </div>
-    </aside>
+      <p className="small muted" style={{ marginTop: 12 }}>{note}</p>
+    </div>
   );
 }
 
@@ -69,13 +68,14 @@ function StudentForm({ s }: { s: StudentProfile }) {
   const yearId = useId();
   return (
     <div className="page">
-      <header className="page-head">
-        <h1>Your profile</h1>
-        <p className="lede">Keep this current. Mentors see your goal, and matching uses everything here.</p>
-      </header>
-      <div className="split">
+      <div className="narrow" style={{ paddingTop: "clamp(28px, 5vw, 48px)" }}>
+        <Link href="/home" className="back">← Home</Link>
+        <span className="kicker">Profile</span>
+        <h1 style={{ marginBottom: 8 }}>Your profile</h1>
+        <p className="lede" style={{ marginBottom: 28 }}>Keep this current. Your mentor reads your goal, and matching uses everything here.</p>
+      <div>
         <div className="stack" style={{ ["--stack" as string]: "18px" }}>
-          <div className="grid-2">
+          <div className="stack" style={{ ["--stack" as string]: "18px" }}>
             <TextField label="Full name" value={f.name} onChange={(v) => set("name", v)} maxLength={80} />
             <SchoolSelect value={f.school} onChange={(v) => set("school", v)} />
           </div>
@@ -99,11 +99,11 @@ function StudentForm({ s }: { s: StudentProfile }) {
           <SlotPicker legend="When are you usually free?" value={f.availability} onChange={(v) => set("availability", v)} />
           <fieldset>
             <legend>Anyone you’d prefer not to be matched with?</legend>
-            <div className="row" style={{ gap: "6px 18px", marginTop: 8 }}>
+            <div className="checks" style={{ marginTop: 8 }}>
               {state.mentors.map((m) => (
-                <label key={m.id} className="small row" style={{ gap: 8 }}>
+                <label key={m.id} className="check">
                   <input type="checkbox" checked={f.excludeMentorIds.includes(m.id)} onChange={(e) => set("excludeMentorIds", e.target.checked ? [...f.excludeMentorIds, m.id] : f.excludeMentorIds.filter((x) => x !== m.id))} />
-                  {m.name}
+                  <span>{m.name}</span>
                 </label>
               ))}
             </div>
@@ -113,6 +113,7 @@ function StudentForm({ s }: { s: StudentProfile }) {
           note="Changes apply from the next matching round. A match you’ve already approved stays as it is."
           onSave={() => { if (apply((st) => updateStudentProfile(st, s.id, actorId(role), f), "Profile saved.")) router.push("/home"); }}
         />
+      </div>
       </div>
     </div>
   );
@@ -130,13 +131,14 @@ function MentorForm({ m }: { m: MentorProfile }) {
   const capId = useId();
   return (
     <div className="page">
-      <header className="page-head">
-        <h1>Your mentor profile</h1>
-        <p className="lede">Students read this before your first conversation.</p>
-      </header>
-      <div className="split">
+      <div className="narrow" style={{ paddingTop: "clamp(28px, 5vw, 48px)" }}>
+        <Link href="/home" className="back">← Home</Link>
+        <span className="kicker">Mentor profile</span>
+        <h1 style={{ marginBottom: 8 }}>Your mentor profile</h1>
+        <p className="lede" style={{ marginBottom: 28 }}>Students read this before your first conversation.</p>
+      <div>
         <div className="stack" style={{ ["--stack" as string]: "18px" }}>
-          <div className="grid-2">
+          <div className="stack" style={{ ["--stack" as string]: "18px" }}>
             <TextField label="Full name" value={f.name} onChange={(v) => set("name", v)} maxLength={80} />
             <TextField label="What you do now" value={f.headline} onChange={(v) => set("headline", v)} maxLength={120} />
           </div>
@@ -161,11 +163,11 @@ function MentorForm({ m }: { m: MentorProfile }) {
           <SlotPicker legend="When are you usually free?" value={f.availability} onChange={(v) => set("availability", v)} />
           <fieldset>
             <legend>Anyone you shouldn’t be matched with?</legend>
-            <div className="row" style={{ gap: "6px 18px", marginTop: 8 }}>
+            <div className="checks" style={{ marginTop: 8 }}>
               {state.students.map((s) => (
-                <label key={s.id} className="small row" style={{ gap: 8 }}>
+                <label key={s.id} className="check">
                   <input type="checkbox" checked={f.excludeStudentIds.includes(s.id)} onChange={(e) => set("excludeStudentIds", e.target.checked ? [...f.excludeStudentIds, s.id] : f.excludeStudentIds.filter((x) => x !== s.id))} />
-                  {s.name}
+                  <span>{s.name}</span>
                 </label>
               ))}
             </div>
@@ -175,6 +177,7 @@ function MentorForm({ m }: { m: MentorProfile }) {
           note="Changes apply from the next matching round. Students you’re already mentoring stay with you."
           onSave={() => { if (apply((st) => updateMentorProfile(st, m.id, actorId(role), f), "Profile saved.")) router.push("/home"); }}
         />
+      </div>
       </div>
     </div>
   );

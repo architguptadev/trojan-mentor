@@ -11,9 +11,6 @@ test("no horizontal overflow on mobile and the menu works", async ({ page }) => 
   }
   await page.goto("/");
   await page.screenshot({ path: "submission/screenshots/mobile-landing.png" });
-  const menu = page.getByRole("button", { name: "Menu" });
-  await expect(menu).toBeVisible();
-  await menu.click();
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Cohort" })).toBeVisible();
   await page.screenshot({ path: "submission/screenshots/mobile-menu.png" });
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Cohort" }).click();

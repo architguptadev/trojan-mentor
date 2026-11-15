@@ -25,7 +25,7 @@ export function initials(name: string) {
   return (a + b).toUpperCase();
 }
 
-export function Avatar({ id, name, size = 44 }: { id: string; name: string; size?: number }) {
+export function Avatar({ id, name, size = 28 }: { id: string; name: string; size?: number }) {
   const [bg, ink] = tone(id);
   return (
     <span className="avatar" aria-hidden="true" style={{ "--size": `${size}px`, "--tone-bg": bg, "--tone-ink": ink } as CSSProperties}>
@@ -42,18 +42,6 @@ export function Person({ id, name, meta, size }: { id: string; name: string; met
         <p className="person-name">{name}</p>
         {meta && <p className="person-meta">{meta}</p>}
       </div>
-    </div>
-  );
-}
-
-export function Thread({ left, right, score, className = "", size = 44 }: { left: React.ReactNode; right: React.ReactNode; score?: number; className?: string; size?: number }) {
-  return (
-    <div className={`thread ${className}`} style={{ "--av": `${size}px` } as CSSProperties}>
-      {left}
-      <div className="thread-line" aria-hidden="true">
-        {score !== undefined && <span className="thread-score">{score}</span>}
-      </div>
-      {right}
     </div>
   );
 }

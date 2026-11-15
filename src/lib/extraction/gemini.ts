@@ -3,6 +3,8 @@ import { GEMINI_RESPONSE_SCHEMA, ExtractionError, RawExtraction } from "./schema
 export interface GeminiConfig {
   apiKey: string;
   model: string;
+  /** Tried in order when the primary model is overloaded (5xx) or times out. */
+  fallbackModels?: string[];
   timeoutMs: number;
   fetchImpl?: typeof fetch;
 }
@@ -12,8 +14,12 @@ export function geminiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): Gemin
   if (!apiKey) return null;
   return {
     apiKey,
-    model: env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
-    timeoutMs: Number(env.GEMINI_TIMEOUT_MS) > 0 ? Number(env.GEMINI_TIMEOUT_MS) : 20000,
+    model: env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite",
+    fallbackModels: (env.GEMINI_FALLBACK_MODELS ?? "gemini-3.1-flash-lite,gemini-2.5-flash-lite")
+      .split(",")
+      .map((x) => x.trim())
+      .filter(Boolean),
+    timeoutMs: Number(env.GEMINI_TIMEOUT_MS) > 0 ? Number(env.GEMINI_TIMEOUT_MS) : 15000,
   };
 }
 
@@ -24,12 +30,32 @@ export const SYSTEM_INSTRUCTION = [
   "Only extract facts that are explicitly present. Use empty strings or empty arrays when unknown.",
   "Do not infer protected characteristics (race, religion, health, etc.). For 'communities', include only",
   "groups or affiliations the student explicitly lists. Keep each list item short (a few words).",
+  "For 'school', give the specific USC school or college named (for example 'Viterbi School of Engineering'),",
+  "not just the university, when the document names one.",
 ].join(" ");
 
 export type GeminiInput = { kind: "pdf"; base64: string } | { kind: "text"; text: string };
 
-/** Calls the Gemini REST API with structured output. Server-side only. */
+/**
+ * Calls Gemini with structured output, falling back through `fallbackModels` when a model is
+ * overloaded (5xx) or times out. Quota (429), auth and invalid-output errors stop immediately.
+ */
 export async function extractWithGemini(input: GeminiInput, cfg: GeminiConfig): Promise<RawExtraction> {
+  const models = [cfg.model, ...(cfg.fallbackModels ?? [])].filter((m, i, a) => a.indexOf(m) === i);
+  let last: unknown;
+  for (const model of models) {
+    try {
+      return await extractWithModel(input, { ...cfg, model });
+    } catch (e) {
+      last = e;
+      const retryable = e instanceof ExtractionError && (e.code === "timeout" || (e.code === "provider_error" && /\(5\d\d\)|reach/.test(e.message)));
+      if (!retryable) throw e;
+    }
+  }
+  throw last;
+}
+
+async function extractWithModel(input: GeminiInput, cfg: GeminiConfig): Promise<RawExtraction> {
   const f = cfg.fetchImpl ?? fetch;
   const docPart =
     input.kind === "pdf"

@@ -176,3 +176,25 @@ describe("simple reader on a real PDF (fictional sample)", () => {
     expect(demoParse("SKILLS\nPython, SQL\nJane Roe").name).toBe("Jane Roe");
   });
 });
+
+describe("Gemini fallback (mocked)", () => {
+  it("falls back to the next model on 503, but not on quota errors", async () => {
+    const calls: string[] = [];
+    const f = (async (url: string) => {
+      calls.push(url);
+      return url.includes("primary") ? new Response("", { status: 503 }) : okBody(validProfile);
+    }) as unknown as typeof fetch;
+    const r = await extractWithGemini({ kind: "text", text: "x" }, { ...cfg(f), model: "primary", fallbackModels: ["backup"] });
+    expect(r.name).toBe("Test Student");
+    expect(calls.map((u) => (u.includes("primary") ? "primary" : "backup"))).toEqual(["primary", "backup"]);
+    const q = vi.fn(async () => new Response("", { status: 429 }));
+    await expect(extractWithGemini({ kind: "text", text: "x" }, { ...cfg(q as unknown as typeof fetch), model: "primary", fallbackModels: ["backup"] })).rejects.toMatchObject({ code: "quota" });
+    expect(q).toHaveBeenCalledTimes(1);
+  });
+
+  it("recovers the specific USC school from the document when the model is vague", async () => {
+    const f = async () => okBody({ ...validProfile, school: "University of Southern California" });
+    const r = await extractProfile({ pastedText: SAMPLE_RESUME, engine: "ai", externalAIConsent: true }, cfg(f as unknown as typeof fetch));
+    expect(r.ok && r.profile.school).toBe("Viterbi School of Engineering");
+  });
+});

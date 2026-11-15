@@ -4,20 +4,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { Mark } from "./Mark";
-import { Avatar } from "./People";
 import { roleLabel, useApp, type Role } from "@/lib/store";
 import { inboxFor } from "@/domain/inbox";
 
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { state, role, ready } = useApp();
-  const [open, setOpen] = useState(false);
-  const navId = useId();
-  useEffect(() => setOpen(false), [pathname]);
   const waiting = ready ? inboxFor(state, role).length : 0;
 
   const nav = [
-    { href: "/home", label: "Home", badge: waiting },
+    { href: "/home", label: "Home", count: waiting },
     { href: "/matches", label: role.kind === "coordinator" ? "Matches" : "My matches" },
     ...(role.kind === "coordinator" ? [{ href: "/cohort", label: "Cohort" }, { href: "/dashboard", label: "Dashboard" }] : [{ href: "/profile", label: "Profile" }]),
   ];
@@ -28,24 +24,19 @@ export function Shell({ children }: { children: ReactNode }) {
       <header className="site-header">
         <div className="page">
           <Link href="/" className="brand" aria-label="Trojan Mentor home">
-            <Mark />
+            <Mark size={24} />
             <span className="brand-word">Trojan Mentor</span>
           </Link>
-          <span className="demo-chip" title="Fictional people and data, stored in this browser">Demo</span>
-          <button className="btn btn-secondary btn-small menu-btn" aria-expanded={open} aria-controls={navId} onClick={() => setOpen((o) => !o)}>
-            {open ? "Close" : "Menu"}
-          </button>
-          <div id={navId} className="nav" data-open={open}>
-            <nav aria-label="Main" className="nav-links">
-              {nav.map((n) => (
-                <Link key={n.href} href={n.href} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
-                  {n.label}
-                  {!!n.badge && <span className="badge" aria-label={`${n.badge} waiting`}>{n.badge}</span>}
-                </Link>
-              ))}
-            </nav>
-            <AccountSwitcher />
-          </div>
+          <span className="env-note">Demo environment</span>
+          <nav aria-label="Main" className="nav">
+            {nav.map((n) => (
+              <Link key={n.href} href={n.href} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
+                {n.label}
+                {!!n.count && <span className="count" aria-label={`${n.count} waiting`}>{n.count}</span>}
+              </Link>
+            ))}
+          </nav>
+          <AccountSwitcher />
         </div>
       </header>
       <main id="main" tabIndex={-1}>{children}</main>
@@ -61,11 +52,9 @@ function AccountSwitcher() {
   const router = useRouter();
   const id = useId();
   const value = role.kind === "coordinator" ? "coordinator" : `${role.kind}:${role.id}`;
-  const avatarId = role.kind === "coordinator" ? "coordinator" : role.id;
   return (
     <div className="account">
-      <Avatar id={avatarId} name={role.kind === "coordinator" ? "Program Coordinator" : roleLabel(state, role)} size={30} />
-      <label htmlFor={id} className="sr-only">Signed in as (demo account)</label>
+      <label htmlFor={id} className="muted">Signed in as<span className="sr-only"> (demo account)</span></label>
       <select
         id={id}
         value={value}

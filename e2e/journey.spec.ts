@@ -19,27 +19,30 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   await shot(page, "01-landing");
   // 1. Sign up as a student, using the simple (non-AI) reader
   await page.getByRole("link", { name: "I’m a student" }).click();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await expect(alerts(page)).toContainText("needed to continue");
-  await page.getByRole("checkbox", { name: /Save my profile/ }).check();
-  await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByRole("button", { name: "Use a sample resume" }).click();
+  await expect(page.getByRole("heading", { name: "Start with your resume" })).toBeVisible();
+  await expect(page.getByText("Demo extraction · local text parser")).toBeVisible();
+  await shot(page, "02-resume-step");
+  await page.getByRole("button", { name: "Review profile" }).click();
+  await expect(alerts(page)).toContainText("Choose a resume file first");
+  await page.getByRole("button", { name: "Try a sample resume" }).click();
   await expect(page.getByRole("heading", { name: "Check your details" })).toBeVisible();
-  await expect(page.getByText("Read by the simple reader, not AI").first()).toBeVisible();
+  await expect(page.getByText("Read by the local text parser (not AI)")).toBeVisible();
   await expect(page.getByLabel(/Full name/)).toHaveValue("Imani Castellanos-Reed");
   // Saving is blocked until availability + review confirmation
-  await page.getByRole("button", { name: "Save my profile" }).click();
+  await page.getByRole("button", { name: "Save profile" }).click();
   await expect(alerts(page).filter({ hasText: "Confirm you’ve checked" })).toBeVisible();
+  await expect(alerts(page).filter({ hasText: "Agree to save your profile" })).toBeVisible();
   await page.getByRole("checkbox", { name: "Tue evening" }).check();
   await page.getByRole("checkbox", { name: "Thu evening" }).check();
   await shot(page, "03-review-extracted-profile");
+  await page.getByRole("checkbox", { name: /Save my profile/ }).check();
   await page.getByRole("checkbox", { name: /I’ve checked every detail/ }).check();
-  await page.getByRole("button", { name: "Save my profile" }).click();
+  await page.getByRole("button", { name: "Save profile" }).click();
   // Signing up lands in the new student's own home
   await expect(page).toHaveURL(/\/home/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hi, Imani");
   await expect(page.getByText(/next matching round/)).toBeVisible();
-  await shot(page, "02-student-home");
+  await shot(page, "02b-student-home");
 
   // 2. Allocate as the coordinator
   await asRole(page, "coordinator");
@@ -178,7 +181,7 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
   await shot(page, "04-cohort-allocation");
   // What-if insights: an extra seat for Elena matches Kenji; Riley's direction is uncovered
   const insights = page.locator("section", { has: page.getByRole("heading", { name: "Where more mentors would help" }) });
-  await expect(insights).toContainText("One more place with Elena would match Kenji");
+  await expect(insights).toContainText(/One more place with Elena .* would match Kenji/);
   await expect(insights).toContainText("No alum covers marine science and research");
   await insights.scrollIntoViewIfNeeded();
   await shot(page, "09-cohort-insights");
@@ -205,27 +208,35 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
 
 test("document validation errors are shown clearly", async ({ page }) => {
   await page.goto("/onboard/student");
-  await page.getByRole("checkbox", { name: /Save my profile/ }).check();
-  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByLabel("Upload a resume").setInputFiles({ name: "resume.pdf", mimeType: "application/pdf", buffer: Buffer.from("this is not a pdf at all") });
-  await page.getByRole("button", { name: "Read my resume" }).click();
+  await expect(page.getByText("resume.pdf")).toBeVisible();
+  await page.getByRole("button", { name: "Review profile" }).click();
   await expect(alerts(page)).toContainText("doesn’t look like a valid PDF");
   await page.getByLabel("Upload a resume").setInputFiles({ name: "resume.docx", mimeType: "application/msword", buffer: Buffer.from("x") });
-  await expect(alerts(page)).toContainText("Upload a PDF, .txt or .md file");
+  await expect(alerts(page)).toContainText("Use a PDF, .txt or .md file");
   // A real PDF (fictional sample) is read by the simple reader
   await page.getByLabel("Upload a resume").setInputFiles("public/samples/sample-resume-fictional.pdf");
-  await page.getByRole("button", { name: "Read my resume" }).click();
+  await expect(page.getByRole("button", { name: "Remove" })).toBeVisible();
+  await page.getByRole("button", { name: "Review profile" }).click();
   await expect(page.getByLabel(/Full name/)).toHaveValue("Dev Okafor-Lindgren");
   await expect(page.getByLabel("Skills")).toHaveValue("Figma, User research, Storytelling, Public speaking");
-  await page.getByRole("button", { name: "Back" }).click();
+  await page.getByRole("button", { name: /Back to resume/ }).click();
   // Injection sample is flagged
-  await page.getByRole("button", { name: "Try the tricky resume" }).click();
+  await page.getByText("How your resume is processed").click();
+  await page.getByRole("button", { name: "a resume that hides instructions" }).click();
   await expect(page.getByText(/treated as data, not followed/)).toBeVisible();
   await expect(page.getByLabel("Skills")).toHaveValue("Financial modeling, Pitching");
   await shot(page, "08-injection-flagged");
-  // AI option is honestly unavailable without credentials
-  await page.getByRole("button", { name: "Back" }).click();
-  await expect(page.getByText(/no Gemini key is configured|chose not to let AI/)).toBeVisible();
+  // AI is never used without explicit permission; the status line says which reader will run
+  await page.getByRole("button", { name: /Back to resume/ }).click();
+  await expect(page.getByText("Demo extraction · local text parser")).toBeVisible();
+  const ai = page.getByRole("checkbox", { name: /Let Google’s Gemini read my resume/ });
+  if (await ai.count()) {
+    await ai.check();
+    await expect(page.getByText("AI extraction · Google Gemini, with your permission")).toBeVisible();
+    await expect(page.getByText(/also sent to Google’s Gemini/)).toBeVisible();
+    await ai.uncheck();
+  }
 });
 
 test("automated accessibility scan (axe) on key pages", async ({ page }) => {

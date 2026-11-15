@@ -2,7 +2,7 @@ import { demoParse } from "./demoParser";
 import { readDocument } from "./document";
 import { extractWithGemini, type GeminiConfig } from "./gemini";
 import { detectInstructionLikeText, sanitizeExtraction } from "./sanitize";
-import { ExtractionError, type ExtractionResponse, type RawExtraction } from "./schema";
+import { ExtractionError, matchSchool, type ExtractionResponse, type RawExtraction } from "./schema";
 
 export interface ExtractRequest {
   file?: { name: string; type: string; bytes: Uint8Array };
@@ -61,6 +61,12 @@ export async function extractProfile(req: ExtractRequest, gemini: GeminiConfig |
     }
 
     const { profile, dropped } = sanitizeExtraction(raw);
+    // Models sometimes return only "University of Southern California". Recover the specific
+    // school from the document's own text when it names one.
+    if (!matchSchool(profile.school)) {
+      const fromDoc = matchSchool(text);
+      if (fromDoc) profile.school = fromDoc;
+    }
     if (dropped && !hits.length) warnings.push("Some extracted values looked like instructions and were dropped.");
     const filled = [profile.name, profile.school, profile.careerGoals].filter(Boolean).length + profile.skills.length;
     if (filled < 2) warnings.push("Only a few fields could be read. Please fill in the rest by hand.");

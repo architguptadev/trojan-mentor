@@ -65,22 +65,22 @@ export default function PrivacyPage() {
             <p className="empty small">Choose a person, or switch to a student or alum account (top right).</p>
           ) : (
             <div>
-              <fieldset className="choices">
+              <fieldset className="checks">
                 <legend className="sr-only">Consent for {person.name}</legend>
-                <label className="choice">
+                <label className="check">
                   <input type="checkbox" checked={person.consent.profileProcessing} onChange={(e) => apply((s) => updateConsent(s, person.id, { profileProcessing: e.target.checked }), e.target.checked ? "Profile processing consent granted." : "Consent withdrawn. Open matches were revoked and pending messages cancelled.")} />
                   <span><strong>Save my profile</strong><span className="hint">Turning this off also ends your matches and cancels anything waiting to be sent.</span></span>
                 </label>
-                <label className="choice">
+                <label className="check">
                   <input type="checkbox" checked={person.consent.externalAI} onChange={(e) => apply((s) => updateConsent(s, person.id, { externalAI: e.target.checked }), "External AI consent updated.")} />
                   <span><strong>Let AI read my resume</strong><span className="hint">Only affects future uploads.</span></span>
                 </label>
-                <label className="choice">
+                <label className="check">
                   <input type="checkbox" checked={person.consent.matching} disabled={!person.consent.profileProcessing} onChange={(e) => apply((s) => updateConsent(s, person.id, { matching: e.target.checked }), e.target.checked ? "Visible for matching again. Earlier approvals stay invalid — a new allocation and new approvals are required." : "Removed from matching. Open matches were revoked and pending messages cancelled.")} />
                   <span><strong>Include me in matching</strong><span className="hint">Turning this off ends your matches. Turning it back on doesn’t revive old approvals.</span></span>
                 </label>
                 {person.kind === "mentor" && (
-                  <label className="choice">
+                  <label className="check">
                     <input type="checkbox" checked={person.visibility === "visible"} onChange={(e) => apply((s) => setMentorVisibility(s, person.id, e.target.checked ? "visible" : "paused"), e.target.checked ? "Visibility resumed." : "Visibility paused.")} />
                     <span><strong>Open to new matches</strong><span className="hint">Pause new suggestions without leaving the program.</span></span>
                   </label>
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
                   <>
                     <span className="small">Delete {person.name} and every match, draft and record derived from them? This can’t be undone.</span>
                     <button className="btn btn-small btn-danger" onClick={() => { if (apply((s) => deletePerson(s, person.id), "Profile and derived data deleted.")) { setConfirmDelete(false); setPicked(""); if (role.kind !== "coordinator") setRole({ kind: "coordinator" }); } }}>Delete permanently</button>
-                    <button className="btn btn-small btn-quiet" onClick={() => setConfirmDelete(false)}>Cancel</button>
+                    <button className="link small" onClick={() => setConfirmDelete(false)}>Cancel</button>
                   </>
                 ) : (
                   <button className="btn btn-small btn-danger" onClick={() => setConfirmDelete(true)}>Delete this profile</button>
@@ -104,13 +104,13 @@ export default function PrivacyPage() {
             </div>
           )}
         </div>
-        <aside className="card stack">
+        <aside className="stack" style={{ borderTop: "1px solid var(--line)", paddingTop: 16 }}>
           <h3>Start the demo over</h3>
           <p className="small" style={{ margin: 0 }}>Replaces everything in this browser with the original fictional cohort.</p>
           {confirmReset ? (
             <div className="row">
               <button className="btn btn-small btn-danger" onClick={() => { reset(); setConfirmReset(false); }}>Yes, reset all demo data</button>
-              <button className="btn btn-small btn-quiet" onClick={() => setConfirmReset(false)}>Cancel</button>
+              <button className="link small" onClick={() => setConfirmReset(false)}>Cancel</button>
             </div>
           ) : (
             <button className="btn btn-small btn-secondary" onClick={() => setConfirmReset(true)}>Reset demo data</button>

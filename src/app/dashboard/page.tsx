@@ -2,7 +2,7 @@
 
 import { useApp } from "@/lib/store";
 import { Loading, fmtDateTime } from "@/components/bits";
-import { Avatar } from "@/components/People";
+import { Person } from "@/components/People";
 import { cohortMetrics } from "@/domain/metrics";
 import { LOCKED_STAGES, mentorEligibility } from "@/domain/cohort";
 
@@ -32,15 +32,16 @@ export default function Dashboard() {
   return (
     <div className="page">
       <header className="page-head">
+        <span className="kicker">Dashboard</span>
         <h1>{headline}</h1>
         <p className="lede">Counted just now from this browser’s demo cohort. Every person and every action here is fictional demo activity.</p>
       </header>
 
-      <section aria-label="Cohort figures" className="card funnel">
+      <section aria-label="Cohort figures" className="funnel">
         {steps.map((x) => (
           <div key={x.label} className="funnel-row">
             <p className="funnel-label">{x.label}</p>
-            <div className="funnel-bar" aria-hidden="true"><span style={{ width: `${Math.max(x.n ? 2 : 0, (x.n / base) * 100)}%` }} /></div>
+            <div className="bar" aria-hidden="true"><span style={{ width: `${Math.max(x.n ? 2 : 0, (x.n / base) * 100)}%` }} /></div>
             <p className="funnel-n num">{x.n}</p>
             <p className="funnel-note">{x.note}</p>
           </div>
@@ -52,28 +53,30 @@ export default function Dashboard() {
 
       <div className="section grid-2">
         <section aria-labelledby="cap-title">
-          <h2 id="cap-title" style={{ fontSize: "1.35rem", marginBottom: 12 }}>Mentor places</h2>
-          <ul className="card" style={{ listStyle: "none", margin: 0, padding: "6px 20px" }}>
-            {state.mentors.map((m, i) => {
-              const used = live.filter((x) => x.mentorId === m.id).length;
-              const off = mentorEligibility(m);
-              return (
-                <li key={m.id} style={{ display: "grid", gridTemplateColumns: "36px 1fr 96px", gap: 12, alignItems: "center", padding: "12px 0", borderTop: i ? "1px solid var(--line)" : 0 }}>
-                  <Avatar id={m.id} name={m.name} size={36} />
-                  <div>
-                    <p className="person-name" style={{ fontSize: "1rem" }}>{m.name}</p>
-                    <p className="person-meta">{off ? (/paused/i.test(off) ? "Paused this term" : "Not taking students") : `${used} of ${m.capacity} filled`}</p>
-                  </div>
-                  <div className="meter" aria-hidden="true"><span style={{ width: `${pct(used, m.capacity)}%`, background: "var(--gold)" }} /></div>
-                </li>
-              );
-            })}
-          </ul>
+          <h2 id="cap-title" className="section-title">Mentor places</h2>
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th scope="col">Alum</th><th scope="col" className="num">Places</th><th scope="col" style={{ width: "35%" }}><span className="sr-only">Filled</span></th></tr></thead>
+              <tbody>
+                {state.mentors.map((m) => {
+                  const used = live.filter((x) => x.mentorId === m.id).length;
+                  const off = mentorEligibility(m);
+                  return (
+                    <tr key={m.id}>
+                      <td><Person id={m.id} name={m.name} /></td>
+                      <td className="small num">{off ? (/paused/i.test(off) ? "Paused" : "Not taking students") : `${used} of ${m.capacity}`}</td>
+                      <td style={{ verticalAlign: "middle" }}>{!off && <div className="bar" aria-hidden="true"><span style={{ width: `${pct(used, m.capacity)}%`, background: "var(--gold)" }} /></div>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section aria-labelledby="log-title">
-          <h2 id="log-title" style={{ fontSize: "1.35rem", marginBottom: 12 }}>Recent activity</h2>
-          <ol className="history card" style={{ padding: "18px 20px 6px", maxHeight: 420, overflowY: "auto" }}>
+          <h2 id="log-title" className="section-title">Recent activity</h2>
+          <ol className="history" style={{ borderTop: "1px solid var(--line)", paddingTop: 14, maxHeight: 420, overflowY: "auto" }}>
             {[...state.auditLog].reverse().slice(0, 14).map((e, i) => (
               <li key={i}>
                 <time dateTime={e.at}>{fmtDateTime(e.at)}</time>

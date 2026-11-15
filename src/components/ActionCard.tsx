@@ -71,7 +71,7 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
                 >
                   Save draft
                 </button>
-                <button className="btn btn-small btn-quiet" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="link small" onClick={() => setEditing(false)}>Cancel</button>
               </div>
             </div>
           ) : (
@@ -93,7 +93,7 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
               {action.draft.type === "email" ? <p className="letter">{action.draft.body}</p> : <p className="letter">{action.draft.location}</p>}
               {editable && (
                 <button
-                  className="btn btn-small btn-secondary"
+                  className="link small"
                   style={{ marginTop: 14 }}
                   onClick={() => {
                     if (action.draft.type === "email") {
@@ -114,20 +114,20 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
           {needsApproval &&
             (canApprove ? (
               <div className="stack" style={{ ["--stack" as string]: "8px" }}>
-                <p className="small" style={{ margin: 0 }}>Read it through. Approving covers this exact wording; any edit needs a new approval.</p>
+                <p className="small muted" style={{ margin: 0 }}>Approving covers this exact wording. Any edit needs a new approval.</p>
                 <button className="btn btn-small" onClick={() => apply((s) => approveAction(s, action.id, role.kind as "coordinator" | "student" | "mentor", actorId(role)), "Approved. Nothing has been sent yet.")}>
                   Approve this exact draft
                 </button>
               </div>
             ) : (
-              <p className="notice small">Waiting for {approverLabel} to approve. Switch accounts at the top right to act for them.</p>
+              <p className="small muted" style={{ margin: 0 }}>Waiting for {approverLabel} to approve. Switch accounts at the top right to act for them.</p>
             ))}
 
           {(action.status === "approved" || action.status === "failed") && (
             <div className="stack" style={{ ["--stack" as string]: "10px" }}>
               <div className="field">
                 <label htmlFor={failId} className="small" style={{ fontWeight: 500, color: "var(--ink-2)" }}>For the demo, the next attempt will</label>
-                <select id={failId} value={state.nextFailure} onChange={(e) => apply((s) => setNextFailure(s, e.target.value as FailureMode))} style={{ minHeight: 40 }}>
+                <select id={failId} value={state.nextFailure} onChange={(e) => apply((s) => setNextFailure(s, e.target.value as FailureMode))} >
                   <option value="none">Go through</option>
                   <option value="reject">Fail before sending</option>
                   <option value="lost_ack">Send, but lose the confirmation</option>
@@ -145,7 +145,7 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
             <p className="notice notice-ok small">Recorded once, even across {action.attempts} attempt{action.attempts > 1 ? "s" : ""}. No real {action.draft.type === "email" ? "email was sent" : "calendar was changed"}.</p>
           )}
 
-          <details open={action.attempts > 0 || undefined}>
+          <details className="disclosure" open={action.attempts > 0 || undefined}>
             <summary>History ({action.history.length})</summary>
             <ol className="history" style={{ marginTop: 12 }}>
               {action.history.map((h, i) => (
