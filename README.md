@@ -46,6 +46,9 @@ When the key is set **and** a student consents to external AI processing, `/api/
 | ✅ Built | Bilateral approval under simulated roles; decline closes the pair permanently |
 | ✅ Built | Stateful coordination: exact drafts, required approver, draft fingerprint, attempts, timestamped plan/approve/act/observe history, stable idempotency keys, failure injection, and retry without duplicates |
 | ✅ Built | Consent withdrawal revokes matches and cancels pending actions; consent versioning makes stale approvals unusable |
+| ✅ Built | Coordinator what-ifs: each mentor's extra seat is scored by re-running the optimizer (exact gain and who would be newly matched), plus career directions no opted-in alum covers |
+| ✅ Built | Role-aware “waiting on you” inbox: match decisions, drafts to approve, failed sends to retry, meetings to confirm, open milestones |
+| ✅ Built | Exports: cohort allocation CSV (with spreadsheet formula-injection escaping) and a per-person data download (JSON) |
 | ✅ Built | Template-based first-meeting prep and milestones from reviewed goals (labelled “not AI”) |
 | ✅ Built | Cohort dashboard computed from live state; delete a profile; reset demo |
 | 🟡 Implemented, not live-verified | Gemini adapter (`src/lib/extraction/gemini.ts`). It's covered by mocked tests (timeouts, 429, 401/403, non-JSON, off-schema, blocked, injection in output). **It hasn't been run against the live Gemini API**, because no key was available during the build. |
@@ -66,6 +69,8 @@ src/
     workflow.ts      Consent, bilateral approval, plan/approve/execute with idempotent simulated adapters
     milestones.ts    Template-based prep and milestones
     metrics.ts       Dashboard figures computed from state
+    insights.ts      Exact what-if re-runs: value of one more seat, uncovered directions
+    inbox.ts         What is waiting on the current (simulated) person
     seed.ts          Fictional cohort
   lib/
     store.tsx        React context; persists AppState to localStorage; simulated roles

@@ -12,9 +12,11 @@ All desktop images are **real captures** from the running app, taken by the Play
 | 6 | `screenshots/06-match-milestones.png` | Retry history, first-meeting prep, milestones | Milestones drawn from the student’s own goals. |
 | 7 | `screenshots/07-dashboard.png` | Cohort ledger computed from live state | Cohort health, computed from live state (fictional demo data). |
 | 8 | `screenshots/08-injection-flagged.png` | Prompt-injection sample flagged and dropped | Instructions hidden in a document are treated as data. |
+| 9 | `screenshots/09-cohort-insights.png` | Exact what-ifs: one more seat, uncovered directions | Know exactly which alum to ask, and why. |
+| 10 | `screenshots/10-inbox.png` | Role-aware “waiting on you” inbox | Everyone sees exactly what is waiting on them. |
 | – | `screenshots/04b-cohort-after-onboarding.png` | Cohort after adding the new student | (optional) |
 | – | `screenshots/mobile-*.png` | Mobile landing, menu, cohort, match | (optional) |
 
-**Recommended Devpost gallery order:** 1, 4, 5, 3, 7, 6, 8. Use 1 as the thumbnail.
+**Recommended Devpost gallery order:** 1, 4, 9, 5, 3, 10, 7, 6, 8. Use 1 as the thumbnail.
 
 To regenerate: `npm run build && npm run test:e2e`.

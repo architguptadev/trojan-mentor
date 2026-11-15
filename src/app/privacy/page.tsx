@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { roleLabel, useApp } from "@/lib/store";
 import { Loading } from "@/components/bits";
 import { deletePerson, setMentorVisibility, updateConsent } from "@/domain/workflow";
+import { download, personExport } from "@/lib/export";
 
 export default function PrivacyPage() {
   const { state, ready, role, apply, reset, setRole } = useApp();
@@ -87,6 +88,9 @@ export default function PrivacyPage() {
               </fieldset>
               <p className="tiny muted" style={{ marginTop: 8 }}>Consent version {person.consent.version}. Approvals record this number; any change makes earlier approvals stale.</p>
               <div className="row" style={{ marginTop: 16 }}>
+                <button className="btn btn-small btn-secondary" onClick={() => { const e = personExport(state, person.id); if (e) download(`trojan-mentor-${person.id}.json`, JSON.stringify(e, null, 2), "application/json"); }}>
+                  Download this profile’s data
+                </button>
                 {confirmDelete ? (
                   <>
                     <span className="small">Delete {person.name} and every match, draft and record derived from them? This can’t be undone.</span>

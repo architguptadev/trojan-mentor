@@ -153,6 +153,10 @@ test("consent withdrawal revokes the match and blocks stale approvals", async ({
   // Priya withdraws matching consent from the privacy page
   await asRole(page, "mentor:m-priya");
   await page.getByRole("link", { name: "Privacy" }).first().click();
+  const [json] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Download this profile’s data" }).click()]);
+  const exported = JSON.parse(await (await import("node:fs/promises")).readFile((await json.path())!, "utf8"));
+  expect(exported.profile.id).toBe("m-priya");
+  expect(exported.matches).toHaveLength(2);
   await page.getByRole("checkbox", { name: /Visible for matching/ }).uncheck();
   await page.goto(`/matches/${m.id}`);
   await expect(page.getByText("Revoked — consent withdrawn").first()).toBeVisible();
@@ -170,6 +174,24 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
   await page.locator("#result-title").scrollIntoViewIfNeeded();
   await page.evaluate(() => window.scrollBy(0, -140));
   await shot(page, "04-cohort-allocation");
+  // What-if insights: an extra seat for Elena matches Kenji; Riley's direction is uncovered
+  const insights = page.locator("section", { has: page.getByRole("heading", { name: "Where more mentors would help" }) });
+  await expect(insights.locator("tr", { hasText: "Elena Marisol Quintana" })).toContainText("Kenji");
+  await expect(insights).toContainText("Riley is aiming for marine science and research");
+  await insights.scrollIntoViewIfNeeded();
+  await shot(page, "09-cohort-insights");
+  // CSV export
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export allocation (CSV)" }).click()]);
+  expect(dl.suggestedFilename()).toBe("trojan-mentor-cohort.csv");
+  const csv = await (await import("node:fs/promises")).readFile((await dl.path())!, "utf8");
+  expect(csv.split("\r\n").filter((l) => l.startsWith("unmatched"))).toHaveLength(2);
+  // Inbox: Elena sees a decision waiting
+  await asRole(page, "mentor:m-elena");
+  await expect(page.getByRole("link", { name: "1 waiting on you" })).toBeVisible();
+  await page.getByRole("link", { name: "1 waiting on you" }).click();
+  await expect(page.getByRole("heading", { name: "Waiting on you" })).toBeVisible();
+  await expect(page.getByText(/Decide on your proposed match with Lucía/).first()).toBeVisible();
+  await shot(page, "10-inbox");
   const st = await state(page);
   const m = st.matches.find((x: { studentId: string; stage: string }) => x.studentId === "s-lucia" && x.stage === "proposed");
   await page.goto(`/matches/${m.id}`);

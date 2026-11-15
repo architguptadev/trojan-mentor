@@ -65,7 +65,7 @@ const GROUPS: Record<string, { label: string; terms: string[] }> = {
   },
   "marine-science": {
     label: "Marine science",
-    terms: ["marine biology", "marine science", "oceanography", "ocean conservation", "fisheries"],
+    terms: ["marine biology", "marine biologist", "marine science", "oceanography", "ocean conservation", "fisheries"],
   },
   "python": { label: "Python", terms: ["python", "pandas", "numpy"] },
   "javascript": { label: "JavaScript / TypeScript", terms: ["javascript", "typescript", "react", "node", "next.js"] },

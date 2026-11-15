@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { Mark } from "./Mark";
 import { roleLabel, useApp, type Role } from "@/lib/store";
+import { inboxFor } from "@/domain/inbox";
 
 const NAV = [
   { href: "/demo", label: "Guided demo" },
@@ -131,6 +132,7 @@ function RoleBar() {
           </optgroup>
         </select>
         <span className="tag tag-sim">Simulated role</span>
+        {ready && <InboxLink />}
         <span className="small" style={{ color: "var(--gold-ink)" }}>
           Switching roles is a demo convenience, not sign-in. It provides no real authentication.
         </span>
@@ -139,6 +141,16 @@ function RoleBar() {
         </span>
       </div>
     </div>
+  );
+}
+
+function InboxLink() {
+  const { state, role } = useApp();
+  const n = inboxFor(state, role).length;
+  return (
+    <Link href="/matches" className="small" style={{ fontWeight: 600, color: n ? "var(--cardinal)" : "var(--gold-ink)" }}>
+      {n ? `${n} waiting on you` : "Nothing waiting on you"}
+    </Link>
   );
 }
 

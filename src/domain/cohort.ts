@@ -39,6 +39,24 @@ export interface AllocationOptions {
   runId?: string;
 }
 
+/** The assignment problem for the current state: eligible mentors with remaining seats, the
+ * unlocked eligible student pool, and thresholded weights (null = pair not allowed). */
+export function buildProblem(state: AppState, threshold = DEFAULT_THRESHOLD) {
+  const locked = state.matches.filter((m) => LOCKED_STAGES.includes(m.stage));
+  const lockedStudents = new Set(locked.map((m) => m.studentId));
+  const mentors = state.mentors.filter((m) => !mentorEligibility(m));
+  const capacities = mentors.map((m) => Math.max(0, m.capacity - locked.filter((x) => x.mentorId === m.id).length));
+  const pool = state.students.filter((s) => !studentEligibility(s) && !lockedStudents.has(s.id));
+  const weights = pool.map((s) =>
+    mentors.map((m) => {
+      if (pairBlocked(state, s, m)) return null;
+      const { score } = compatibility(s, m);
+      return score >= threshold ? score : null;
+    }),
+  );
+  return { mentors, pool, weights, capacities };
+}
+
 /**
  * Re-runs the global allocation. Locked (bilaterally approved or further) matches are kept and
  * consume capacity; open proposals are recomputed. Proposals that survive keep their approvals.
@@ -48,23 +66,10 @@ export function runAllocation(state: AppState, opts: AllocationOptions = {}): Ap
   const now = opts.now ?? new Date().toISOString();
   const runId = opts.runId ?? `run-${state.allocationRuns.length + 1}`;
 
-  const locked = state.matches.filter((m) => LOCKED_STAGES.includes(m.stage));
-  const lockedStudents = new Set(locked.map((m) => m.studentId));
-
-  const mentors = state.mentors.filter((m) => !mentorEligibility(m));
+  const { mentors, pool, weights, capacities } = buildProblem(state, threshold);
   const ineligibleMentors = state.mentors
     .filter((m) => mentorEligibility(m))
     .map((m) => ({ mentorId: m.id, reason: mentorEligibility(m)! }));
-  const capacities = mentors.map((m) => m.capacity - locked.filter((x) => x.mentorId === m.id).length);
-
-  const pool = state.students.filter((s) => !studentEligibility(s) && !lockedStudents.has(s.id));
-  const weights = pool.map((s) =>
-    mentors.map((m) => {
-      if (pairBlocked(state, s, m)) return null;
-      const { score } = compatibility(s, m);
-      return score >= threshold ? score : null;
-    }),
-  );
 
   const opt = optimalAssignment({ weights, capacities });
   const greedy = greedyAssignment({ weights, capacities });

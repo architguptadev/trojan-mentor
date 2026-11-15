@@ -17,7 +17,8 @@ Trojan Mentor runs the whole mentorship journey:
 5. **Bilateral approval.** The student and the mentor each approve, under clearly labelled *simulated* roles.
 6. **Approved coordination.** The introduction, the calendar invitation and the follow-up each follow plan → approve → act → observe. Each one stores the exact draft, its required approver, attempt counts, timestamped history and a stable idempotency key. You can force a provider failure or a lost acknowledgement and watch the retry finish without sending twice.
 7. **Development milestones.** First-meeting prep and four milestones are filled from the student's own goals and the mentor's background. They're labelled as templates, not AI.
-8. **Cohort dashboard.** Coverage, mentor capacity, approvals, introductions, meetings and milestones, all computed live from current state and labelled as fictional demo activity.
+8. **Coordinator insights.** The optimizer is re-run with one extra seat per mentor, showing exactly how much the cohort total rises and who would newly be matched. It also names the career directions no opted-in alum covers, so recruiting asks are specific. A role-aware *waiting on you* inbox and CSV/JSON exports make it workable for a real program office.
+9. **Cohort dashboard.** Coverage, mentor capacity, approvals, introductions, meetings and milestones, all computed live from current state and labelled as fictional demo activity.
 
 ## How we built it
 
@@ -39,7 +40,7 @@ Trojan Mentor runs the whole mentorship journey:
 ## Accomplishments that we're proud of
 
 - The whole journey works end to end in a browser with no credentials, and it survives a refresh.
-- 57 unit/integration tests and 7 Playwright end-to-end tests pass. The end-to-end tests cover the full journey, consent withdrawal, declines, document errors, an axe accessibility scan, keyboard access and mobile overflow. The suite also passes against the live deployment.
+- 66 unit/integration tests and 7 Playwright end-to-end tests pass. The end-to-end tests cover the full journey, consent withdrawal, declines, document errors, an axe accessibility scan, keyboard access and mobile overflow. The suite also passes against the live deployment.
 - Unmatched students get a truthful explanation instead of a manufactured match.
 
 ## What we learned

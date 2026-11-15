@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useApp } from "@/lib/store";
 import { Fictional, Loading, StageTag, first, fmtDateTime, topReasons } from "@/components/bits";
 import { DEFAULT_THRESHOLD, LOCKED_STAGES, mentorEligibility, runAllocation, studentEligibility } from "@/domain/cohort";
+import { recruitingGaps, seatInsights } from "@/domain/insights";
+import { list } from "@/domain/compatibility";
+import { cohortCsv, download } from "@/lib/export";
 
 export default function CohortPage() {
   const { state, ready, apply, role } = useApp();
@@ -37,6 +40,11 @@ export default function CohortPage() {
               {run ? "Re-run allocation" : "Run allocation"}
             </button>
             {!isCoordinator && <span className="small muted">Switch to Program coordinator to run.</span>}
+            {run && isCoordinator && (
+              <button className="btn btn-small btn-quiet" onClick={() => download("trojan-mentor-cohort.csv", cohortCsv(state), "text/csv;charset=utf-8")}>
+                Export allocation (CSV)
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -182,6 +190,8 @@ export default function CohortPage() {
               </p>
             )}
           </section>
+
+          <Insights />
         </>
       )}
 
@@ -229,5 +239,52 @@ export default function CohortPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function Insights() {
+  const { state } = useApp();
+  const seats = seatInsights(state).slice(0, 4);
+  const gaps = recruitingGaps(state).filter((g) => g.directions.length);
+  const name = (id: string) => state.students.find((s) => s.id === id)?.name.split(" ")[0] ?? "a student";
+  const mentor = (id: string) => state.mentors.find((m) => m.id === id);
+  if (!seats.length && !gaps.length) return null;
+  return (
+    <section aria-labelledby="insights-title" style={{ marginBottom: 48 }}>
+      <h2 id="insights-title" style={{ marginBottom: 6 }}>Where more mentors would help</h2>
+      <p className="muted small" style={{ marginBottom: 18, maxWidth: "70ch" }}>
+        Computed by re-running the same optimizer with one extra seat per mentor. These are exact what-ifs on the current data, not predictions.
+        Use them to make a specific, low-pressure ask.
+      </p>
+      <div className="grid-2">
+        {seats.length > 0 && (
+          <div className="table-wrap">
+            <table>
+              <caption className="sr-only">Effect of one more mentor seat</caption>
+              <thead><tr><th scope="col">If this mentor took one more student</th><th scope="col">Cohort total</th><th scope="col">Newly matched</th></tr></thead>
+              <tbody>
+                {seats.map((x) => (
+                  <tr key={x.mentorId}>
+                    <td><span className="serif">{mentor(x.mentorId)?.name}</span><div className="tiny muted">now {mentor(x.mentorId)?.capacity} seat{mentor(x.mentorId)?.capacity === 1 ? "" : "s"}</div></td>
+                    <td className="num" style={{ color: "var(--green)", fontWeight: 600 }}>+{x.gain}</td>
+                    <td className="small">{x.newlyMatched.length ? x.newlyMatched.map(name).join(", ") : "No one new; better fits for others"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {gaps.length > 0 && (
+          <div className="panel-quiet stack" style={{ ["--stack" as string]: "10px" }}>
+            <h3 style={{ fontSize: "1.05rem" }}>Directions no opted-in alumni cover</h3>
+            {gaps.map((g) => (
+              <p key={g.studentId} className="small" style={{ margin: 0 }}>
+                <strong>{name(g.studentId)}</strong> is aiming for {list(g.directions).toLowerCase()}. No current mentor shares that direction, so recruiting one alum in this area is the only way to a good match.
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
