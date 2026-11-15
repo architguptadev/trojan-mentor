@@ -113,11 +113,11 @@ export default function StudentOnboarding() {
             };
             const ok = apply(
               (s) => ({ ...s, students: [...s.students, student], auditLog: [...s.auditLog, { at, message: `${student.name} completed onboarding (fields reviewed; source: ${student.source}).` }] }),
-              "Profile saved. Your resume file wasn’t kept.",
+              "Welcome to Trojan Mentor. Your resume file wasn’t kept.",
             );
             if (ok) {
-              setSavedId(id);
-              setStep("done");
+              setRole({ kind: "student", id });
+              router.push("/home");
             }
           }}
         />
@@ -417,7 +417,7 @@ function DocumentStep({ headingRef, externalAIConsent, onBack, onExtracted, onMa
             Try the tricky resume
           </button>
           <p className="tiny muted" style={{ margin: 0 }}>
-            Download the samples: <a href="/samples/sample-resume-fictional.txt">sample resume</a>,{" "}
+            Download the samples: <a href="/samples/sample-resume-fictional.pdf">sample PDF resume</a>, <a href="/samples/sample-resume-fictional.txt">text resume</a>,{" "}
             <a href="/samples/sample-resume-injection-test.txt">tricky resume</a>
           </p>
         </div>

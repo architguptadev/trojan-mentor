@@ -46,7 +46,7 @@ export default function CohortPage() {
           </button>
         </div>
       </header>
-      {!isCoordinator && <p className="notice small" style={{ marginTop: -12, marginBottom: 24 }}>Switch “Viewing as” to Program coordinator to run matching.</p>}
+      {!isCoordinator && <p className="notice small" style={{ marginTop: -12, marginBottom: 24 }}>Only the program coordinator can run matching. Switch accounts at the top right.</p>}
 
       {!run ? (
         <section aria-label="People in the cohort" className="grid-2">

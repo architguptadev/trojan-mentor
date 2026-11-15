@@ -7,7 +7,7 @@ const shot = async (page: Page, name: string) => {
   await page.screenshot({ path: `${SHOTS}/${name}.png` });
 };
 const alerts = (page: Page) => page.locator("[role=alert]:not(#__next-route-announcer__)");
-const asRole = (page: Page, value: string) => page.getByLabel("Viewing as").selectOption(value);
+const asRole = (page: Page, value: string) => page.getByLabel(/Signed in as/).selectOption(value);
 const state = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem("trojan-mentor:state") || "null"));
 
 test.describe.configure({ mode: "serial" });
@@ -17,12 +17,8 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Your next chapter starts with a conversation.");
   await page.waitForTimeout(1300);
   await shot(page, "01-landing");
-  await page.getByRole("link", { name: "Try the demo" }).click();
-  await expect(page.getByRole("heading", { name: /Walk through a full match/ })).toBeVisible();
-  await shot(page, "02-guided-demo");
-
-  // 1. Student onboarding with the deterministic demo parser
-  await page.getByRole("button", { name: "Open student onboarding" }).click();
+  // 1. Sign up as a student, using the simple (non-AI) reader
+  await page.getByRole("link", { name: "I’m a student" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(alerts(page)).toContainText("needed to continue");
   await page.getByRole("checkbox", { name: /Save my profile/ }).check();
@@ -39,11 +35,16 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   await shot(page, "03-review-extracted-profile");
   await page.getByRole("checkbox", { name: /I’ve checked every detail/ }).check();
   await page.getByRole("button", { name: "Save my profile" }).click();
-  await expect(page.getByRole("heading", { name: /profile is saved/ })).toBeVisible();
+  // Signing up lands in the new student's own home
+  await expect(page).toHaveURL(/\/home/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hi, Imani");
+  await expect(page.getByText(/next matching round/)).toBeVisible();
+  await shot(page, "02-student-home");
 
-  // 2. Allocate
-  await page.getByRole("button", { name: "Match the cohort again" }).click();
-  await expect(page).toHaveURL(/\/cohort/);
+  // 2. Allocate as the coordinator
+  await asRole(page, "coordinator");
+  await page.goto("/cohort");
+  await page.getByRole("button", { name: "Run allocation" }).click();
   await expect(page.getByRole("heading", { name: "Pairings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Not matched this round" })).toBeVisible();
   await expect(page.locator("main").getByText("Riley Brannigan-Cho").first()).toBeVisible();
@@ -121,7 +122,7 @@ test("complete journey: onboard → allocate → bilateral approval → intro wi
   await shot(page, "06-match-milestones");
 
   // 7. Dashboard reflects actual state
-  await page.getByRole("link", { name: "Dashboard" }).first().click();
+  await page.goto("/dashboard");
   const ledger = page.getByLabel("Cohort figures");
   const figure = (label: string) => ledger.locator(".funnel-row", { has: page.getByText(label, { exact: true }) }).locator(".funnel-n");
   await expect(figure("Introduced")).toHaveText("1");
@@ -186,11 +187,11 @@ test("declining a match closes it and nothing is drafted", async ({ page }) => {
   expect(dl.suggestedFilename()).toBe("trojan-mentor-cohort.csv");
   const csv = await (await import("node:fs/promises")).readFile((await dl.path())!, "utf8");
   expect(csv.split("\r\n").filter((l) => l.startsWith("unmatched"))).toHaveLength(2);
-  // Inbox: Elena sees a decision waiting
+  // Home: Elena sees a decision waiting, with a badge on Home
   await asRole(page, "mentor:m-elena");
-  await expect(page.getByRole("link", { name: "1 waiting on you" })).toBeVisible();
-  await page.getByRole("link", { name: "1 waiting on you" }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("1 thing waiting on Elena");
+  await expect(page.getByLabel("1 waiting")).toBeVisible();
+  await page.goto("/home");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hi, Elena");
   await expect(page.getByText(/Decide on your proposed match with Lucía/).first()).toBeVisible();
   await shot(page, "10-inbox");
   const st = await state(page);
@@ -211,6 +212,12 @@ test("document validation errors are shown clearly", async ({ page }) => {
   await expect(alerts(page)).toContainText("doesn’t look like a valid PDF");
   await page.getByLabel("Upload a resume").setInputFiles({ name: "resume.docx", mimeType: "application/msword", buffer: Buffer.from("x") });
   await expect(alerts(page)).toContainText("Upload a PDF, .txt or .md file");
+  // A real PDF (fictional sample) is read by the simple reader
+  await page.getByLabel("Upload a resume").setInputFiles("public/samples/sample-resume-fictional.pdf");
+  await page.getByRole("button", { name: "Read my resume" }).click();
+  await expect(page.getByLabel(/Full name/)).toHaveValue("Dev Okafor-Lindgren");
+  await expect(page.getByLabel("Skills")).toHaveValue("Figma, User research, Storytelling, Public speaking");
+  await page.getByRole("button", { name: "Back" }).click();
   // Injection sample is flagged
   await page.getByRole("button", { name: "Try the tricky resume" }).click();
   await expect(page.getByText(/treated as data, not followed/)).toBeVisible();
@@ -223,7 +230,7 @@ test("document validation errors are shown clearly", async ({ page }) => {
 
 test("automated accessibility scan (axe) on key pages", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // measure settled colors, not mid-animation frames
-  for (const path of ["/", "/demo", "/onboard/student", "/onboard/alumni", "/cohort", "/matches", "/dashboard", "/privacy", "/how-it-works"]) {
+  for (const path of ["/", "/home", "/profile", "/onboard/student", "/onboard/alumni", "/cohort", "/matches", "/dashboard", "/privacy", "/how-it-works"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
     const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
@@ -238,4 +245,22 @@ test("keyboard: skip link and nav are reachable", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
+});
+
+test("people can edit their own profile and it persists", async ({ page }) => {
+  await page.goto("/home");
+  await asRole(page, "student:s-riley");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hi, Riley");
+  await page.getByRole("link", { name: "Profile", exact: true }).click();
+  await page.getByLabel("Target roles").fill("Data scientist, Marine biologist");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page).toHaveURL(/\/home/);
+  await expect(page.getByText(/Data scientist, Marine biologist/)).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(/Data scientist, Marine biologist/)).toBeVisible();
+  // Alumni can't lower capacity below active mentees, and can pause from home
+  await asRole(page, "mentor:m-marcus");
+  await page.goto("/home");
+  await page.getByRole("checkbox", { name: /Open to new students/ }).uncheck();
+  await expect(page.getByText(/not taking new students/)).toBeVisible();
 });

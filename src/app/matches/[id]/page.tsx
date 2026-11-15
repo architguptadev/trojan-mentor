@@ -137,7 +137,7 @@ export default function MatchPage() {
                     {isParticipant ? (
                       <button className="btn btn-small" onClick={() => apply((st) => confirmMeetingHeld(st, match.id, actorId(role)), "Meeting confirmed. Milestones are ready.")}>Confirm the meeting was held</button>
                     ) : (
-                      <button className="btn btn-small btn-secondary" onClick={() => setRole({ kind: "student", id: s.id })}>View as {first(s.name)} to confirm</button>
+                      <button className="btn btn-small btn-secondary" onClick={() => setRole({ kind: "student", id: s.id })}>Switch to {first(s.name)}’s account</button>
                     )}
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function MatchPage() {
               {match.stage !== "meeting_held" && <p className="notice small" style={{ marginBottom: 10 }}>These open up after the first meeting.</p>}
               {match.stage === "meeting_held" && !isStudent && (
                 <p className="notice small" style={{ marginBottom: 10 }}>
-                  Only {first(s.name)} can tick these off. <button className="linklike" onClick={() => setRole({ kind: "student", id: s.id })}>View as {first(s.name)}</button>
+                  Only {first(s.name)} can tick these off. <button className="linklike" onClick={() => setRole({ kind: "student", id: s.id })}>Switch to {first(s.name)}’s account</button>
                 </p>
               )}
               <ul className="milestones">
@@ -226,7 +226,7 @@ function DecisionCard({ who, person, decision, canAct, onAct, onSwitch, open }: 
             <button className="btn btn-small btn-danger" onClick={() => onAct("declined")}>Decline</button>
           </div>
         ) : (
-          <div><button className="btn btn-small btn-secondary" onClick={onSwitch}>View as {first(person.name)} to decide</button></div>
+          <div><button className="btn btn-small btn-secondary" onClick={onSwitch}>Switch to {first(person.name)}’s account</button></div>
         ))}
     </div>
   );

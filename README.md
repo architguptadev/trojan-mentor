@@ -15,7 +15,7 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Open the site and choose **Start the guided demo**. A fictional cohort of 8 students and 5 alumni (1 paused) loads automatically. The guided checklist tracks your actual progress through the journey. **Reset demo data** in the top strip restores the starting cohort at any time.
+Open the site and choose **I’m a student**, **I’m an alum**, or the coordinator view. A fictional cohort of 8 students and 5 alumni (1 paused) is already there. Use the account switcher (top right) to act as anyone; it is a demo convenience, not sign-in. Each account has its own home with what is waiting on them. **Reset demo data** in the footer restores the starting cohort.
 
 | Command | What it does |
 | --- | --- |
@@ -30,14 +30,15 @@ cp .env.example .env.local
 # set GEMINI_API_KEY=...   (server-side only, never NEXT_PUBLIC_)
 ```
 
-When the key is set **and** a student consents to external AI processing, `/api/extract` sends the uploaded resume (PDF inline, or text) to the Gemini REST API with a fixed JSON response schema. Without the key, the UI says AI is unavailable and offers the deterministic **demo parser — not AI**. A missing key never blocks the demo.
+When the key is set **and** a student consents to external AI processing, `/api/extract` sends the uploaded resume (PDF inline, or text) to the Gemini REST API with a fixed JSON response schema. Without the key, the UI says AI is unavailable and offers the deterministic **simple reader (not AI)**. A missing key never blocks the demo.
 
 ## What's built, partial, and planned
 
 | Status | Item |
 | --- | --- |
 | ✅ Built | Student onboarding: three separate consents, upload (PDF/TXT/MD ≤ 2 MB) or paste, extraction into editable fields, required review before save |
-| ✅ Built | Deterministic demo parser, clearly labelled “not AI” |
+| ✅ Built | Deterministic simple reader, clearly labelled “not AI”. Handles labelled lines and section-style resumes, including real PDFs with letter-spaced headings |
+| ✅ Built | Role-aware home for each account (student, alum, coordinator), account switcher, sign-up lands in your own account, profile editing with capacity guard |
 | ✅ Built | File validation: size, type, fake/corrupt PDFs, invalid UTF-8, binary text, scanned PDFs with no text, empty input |
 | ✅ Built | Untrusted-document handling: instruction-like text is detected, flagged, and dropped; control and bidi characters are stripped; lengths are bounded; React escapes all output |
 | ✅ Built | Alumni onboarding: trajectory, expertise, preferences, availability, capacity, explicit opt-in, visible/paused |
@@ -85,7 +86,7 @@ e2e/                 Playwright
 
 ### The four layers, labelled honestly
 
-1. **AI interpretation.** Gemini turns a document into suggested fields, only with consent and credentials. Otherwise the demo parser runs, labelled “not AI”.
+1. **AI interpretation.** Gemini turns a document into suggested fields, only with consent and credentials. Otherwise the simple reader runs, labelled “not AI”.
 2. **Compatibility scoring.** A transparent heuristic, explained below. It isn't a probability, prediction or model confidence.
 3. **Deterministic allocation.** Min-cost flow over eligible pairs.
 4. **Approved coordination.** Plan → approve → act → observe, with simulated adapters.
@@ -133,7 +134,7 @@ To enable Gemini on Vercel, add `GEMINI_API_KEY` as a server environment variabl
 - Simulated roles aren't authentication. Anyone using the browser can act as anyone.
 - Scoring weights were chosen by hand. They haven't been learned from or validated against mentorship outcomes.
 - The ontology is small. Unrecognized terms only match exactly.
-- The demo parser expects labelled lines and can't read scanned images.
+- The simple reader expects labelled lines or common section headings and can't read scanned images.
 - Meeting times use fixed slot times in Pacific time. There's no time-zone handling for mentors elsewhere.
 - Scale: the allocator is O(S · E · V) Bellman–Ford, fine for hundreds of people. Thousands would need a faster solver.
 - Impact on students is an **intended** benefit and hasn't been measured.

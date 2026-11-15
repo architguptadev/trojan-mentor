@@ -5,8 +5,8 @@ All desktop images are **real captures** from the running app, taken by the Play
 | # | File | Shows | Suggested Devpost caption |
 | --- | --- | --- | --- |
 | 1 | `screenshots/01-landing.png` | Promise and entry point | Your next chapter starts with a conversation. |
-| 2 | `screenshots/02-guided-demo.png` | Progress-tracking guided demo | A guided checklist that tracks real progress through the journey. |
-| 3 | `screenshots/03-review-extracted-profile.png` | Extracted fields under review, labelled “Demo parser — not AI” | Nothing is saved until the student reviews every extracted field. |
+| 2 | `screenshots/02-student-home.png` | A new student lands in their own home | Sign up and you land in your own account, with what happens next. |
+| 3 | `screenshots/03-review-extracted-profile.png` | Extracted fields under review, labelled “Read by the simple reader, not AI” | Nothing is saved until the student reviews every extracted field. |
 | 4 | `screenshots/04-cohort-allocation.png` | Optimizer vs greedy (461/6 vs 425/5), explained pairings | The whole cohort is optimized at once, and every point is explained. |
 | 5 | `screenshots/05-coordination-retry.png` | Plan → approve → act → observe with exact draft and attempts | Every outgoing message is approved word for word, and retries never send twice. |
 | 6 | `screenshots/06-match-milestones.png` | Retry history, first-meeting prep, milestones | Milestones drawn from the student’s own goals. |

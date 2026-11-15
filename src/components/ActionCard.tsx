@@ -120,7 +120,7 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
                 </button>
               </div>
             ) : (
-              <p className="notice small">Waiting for {approverLabel} to approve. Switch “Viewing as” to act for them.</p>
+              <p className="notice small">Waiting for {approverLabel} to approve. Switch accounts at the top right to act for them.</p>
             ))}
 
           {(action.status === "approved" || action.status === "failed") && (

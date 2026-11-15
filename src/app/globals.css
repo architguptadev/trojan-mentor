@@ -99,28 +99,25 @@ p { margin: 0 0 1em; }
 .site-header .page { display: flex; align-items: center; gap: 20px; min-height: 66px; position: relative; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); flex-shrink: 0; }
 .brand-word { font-family: var(--serif); font-size: 1.3rem; font-weight: 500; letter-spacing: -0.01em; }
-.nav { display: flex; gap: 2px; margin-left: auto; align-items: center; }
-.nav a { color: var(--ink-2); text-decoration: none; font-size: 0.94rem; padding: 7px 12px; border-radius: 999px; white-space: nowrap; }
+.nav { display: flex; gap: 18px; margin-left: auto; align-items: center; }
+.nav-links { display: flex; gap: 2px; align-items: center; }
+.nav a { color: var(--ink-2); text-decoration: none; font-size: 0.94rem; padding: 7px 12px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .nav a:hover { color: var(--ink); background: var(--sunk); }
 .nav a[aria-current="page"] { color: var(--cardinal); background: var(--cardinal-wash); }
+.badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--cardinal); color: #fff; font-size: 0.75rem; font-weight: 600; display: inline-grid; place-items: center; }
+.demo-chip { font-size: 0.75rem; font-weight: 600; color: var(--gold-ink); background: var(--gold-wash); border-radius: 999px; padding: 2px 9px; }
+.account { display: flex; align-items: center; gap: 8px; padding: 3px 4px 3px 3px; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); }
+.account select { font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--ink); border: 0; background: transparent no-repeat; min-height: 30px; padding: 0 26px 0 2px; width: auto; max-width: 200px; appearance: none; cursor: pointer; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: calc(100% - 13px) 55%, calc(100% - 8px) 55%; background-size: 5px 5px; }
+.account select:focus-visible { box-shadow: none; outline: 2px solid var(--cardinal); outline-offset: 2px; border-radius: 6px; }
 .site-header .menu-btn { display: none; margin-left: auto; }
-@media (max-width: 1000px) {
+@media (max-width: 860px) {
   .site-header .menu-btn { display: inline-flex; }
-  .nav { display: none; position: absolute; left: var(--gutter); right: var(--gutter); top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--lift); flex-direction: column; align-items: stretch; padding: 8px; gap: 2px; }
+  .nav { display: none; position: absolute; left: var(--gutter); right: var(--gutter); top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--lift); flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
   .nav[data-open="true"] { display: flex; }
+  .nav-links { flex-direction: column; align-items: stretch; }
   .nav a { padding: 12px 14px; border-radius: var(--r-md); }
+  .account select { max-width: none; flex: 1; }
 }
-
-.demo-bar { background: var(--sunk); font-size: 0.88rem; color: var(--ink-2); }
-.demo-bar .page { display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; min-height: 46px; padding-top: 6px; padding-bottom: 6px; }
-.demo-bar label { color: var(--ink-3); }
-.demo-bar select { font: inherit; font-weight: 600; color: var(--ink); border: 1px solid var(--line-2); border-radius: 999px; padding: 4px 30px 4px 12px; min-height: 32px; width: auto; max-width: 100%; appearance: none; background: var(--surface) no-repeat; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%); background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; background-size: 5px 5px; }
-.demo-bar .spacer { flex: 1; }
-.demo-bar .linklike { color: var(--ink-2); }
-.demo-bar .waiting { color: var(--cardinal); font-weight: 600; text-decoration: none; }
-.demo-bar .waiting:hover { text-decoration: underline; }
-.demo-bar .quiet { color: var(--ink-3); }
-@media (max-width: 640px) { .demo-bar .spacer { display: none; } .demo-bar .hide-sm { display: none; } }
 
 /* ---------- Footer ---------- */
 

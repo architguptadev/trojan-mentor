@@ -95,7 +95,7 @@ export default function HowItWorks() {
             <li>The scoring weights are hand-chosen, not learned or validated against outcomes. Impact on students is an intended benefit, not a measured one.</li>
           </ul>
         </div>
-        <p style={{ marginTop: 32 }}><Link className="btn" href="/demo">Try the guided demo</Link></p>
+        <p style={{ marginTop: 32 }}><Link className="btn" href="/home">Open the platform</Link></p>
       </section>
     </div>
   );

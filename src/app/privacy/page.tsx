@@ -62,7 +62,7 @@ export default function PrivacyPage() {
             </div>
           )}
           {!person ? (
-            <p className="empty small">Choose a person, or switch “Viewing as” to a student or mentor.</p>
+            <p className="empty small">Choose a person, or switch to a student or alum account (top right).</p>
           ) : (
             <div>
               <fieldset className="choices">

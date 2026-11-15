@@ -20,10 +20,12 @@ export default function Landing() {
             Then it helps the two of you keep going.
           </p>
           <div className="row" style={{ marginTop: 30, gap: 12 }}>
-            <Link className="btn" href="/demo">Try the demo</Link>
-            <Link className="btn btn-secondary" href="/how-it-works">How matching works</Link>
+            <Link className="btn" href="/onboard/student">I’m a student</Link>
+            <Link className="btn btn-secondary" href="/onboard/alumni">I’m an alum</Link>
           </div>
-          <p className="small muted" style={{ marginTop: 16 }}>No sign-in needed. Everyone in the demo is fictional.</p>
+          <p className="small muted" style={{ marginTop: 16 }}>
+            Running a program? <Link href="/home">Open the coordinator view</Link>. No sign-in needed; everyone already here is fictional.
+          </p>
         </div>
 
         <figure className="hero-card" style={{ margin: 0 }} aria-label={`Example match: ${s.name} and ${m.name}`}>
@@ -79,10 +81,10 @@ export default function Landing() {
 
       <section className="section card-sunk row-between" aria-label="Try the demo">
         <div>
-          <h2 style={{ marginBottom: 6 }}>See a full match in about five minutes</h2>
-          <p className="muted" style={{ margin: 0 }}>Onboard a student, match the cohort, approve an introduction and plan a first meeting.</p>
+          <h2 style={{ marginBottom: 6 }}>A cohort is already here</h2>
+          <p className="muted" style={{ margin: 0 }}>Eight students and five alumni are waiting to be matched. Sign up yourself, or run matching as the coordinator.</p>
         </div>
-        <Link className="btn" href="/demo">Start the demo</Link>
+        <Link className="btn" href="/home">Open the platform</Link>
       </section>
     </div>
   );

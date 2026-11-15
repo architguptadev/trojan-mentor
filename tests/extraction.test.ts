@@ -153,3 +153,26 @@ describe("Gemini adapter (mocked — not a live test)", () => {
     expect(!r.ok && r.canFallback).toBe(true);
   });
 });
+
+describe("simple reader on a real PDF (fictional sample)", () => {
+  it("reads section-heading resumes, including letter-spaced headings from PDF text", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const bytes = new Uint8Array(await readFile("public/samples/sample-resume-fictional.pdf"));
+    const r = await extractProfile({ file: { name: "resume.pdf", type: "application/pdf", bytes }, engine: "demo", externalAIConsent: false }, null);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.engine).toBe("demo-parser");
+    expect(r.profile.name).toBe("Dev Okafor-Lindgren");
+    expect(r.profile.school).toBe("Annenberg School for Communication and Journalism");
+    expect(r.profile.gradYear).toBe(2027);
+    expect(r.profile.careerGoals).toMatch(/product design and UX research/);
+    expect(r.profile.skills).toEqual(["Figma", "User research", "Storytelling", "Public speaking"]);
+    expect(r.profile.interests).toEqual(["Film", "Social media"]);
+    expect(r.profile.communities).toEqual(["Transfer student", "First-generation college student"]);
+    expect(r.profile.targetRoles.length + r.profile.industries.length).toBeGreaterThan(0);
+  });
+
+  it("does not treat a name-like heading as the name", () => {
+    expect(demoParse("SKILLS\nPython, SQL\nJane Roe").name).toBe("Jane Roe");
+  });
+});

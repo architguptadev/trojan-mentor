@@ -205,7 +205,7 @@ export default function AlumniOnboarding() {
                 fictional: true,
                 createdAt: at,
               };
-              if (apply((s) => ({ ...s, mentors: [...s.mentors, m], auditLog: [...s.auditLog, { at, message: `${m.name} opted in as a mentor (capacity ${m.capacity}, ${m.visibility}).` }] }), "You’re signed up to mentor.")) setSavedId(id);
+              if (apply((s) => ({ ...s, mentors: [...s.mentors, m], auditLog: [...s.auditLog, { at, message: `${m.name} signed up to mentor (up to ${m.capacity}, ${m.visibility === "visible" ? "open to new students" : "paused"}).` }] }), "Thanks for signing up to mentor.")) { setRole({ kind: "mentor", id }); router.push("/home"); }
             }}
           >
             Sign up to mentor

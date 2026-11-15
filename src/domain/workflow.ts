@@ -233,7 +233,7 @@ export function buildDraft(state: AppState, match: Match, kind: ActionKind, slot
         ``,
         `${sf} is studying ${s.program.replace(/^[A-Z]\.[A-Z]\.\s*/, "").toLowerCase()} and graduates in ${s.gradYear}. In ${sf}’s words: “${s.careerGoals.replace(/\.$/, "")}.”`,
         ``,
-        `${mf} is ${article(m.headline.replace(/ \(fictional\)/g, ""))}. On mentoring, ${mf} wrote: “${m.mentoringPreferences.replace(/\.$/, "")}.”`,
+        `${mf} is ${article(m.headline.replace(/ \(fictional\)/g, "").replace(", ", " at "))}. On mentoring, ${mf} wrote: “${m.mentoringPreferences.replace(/\.$/, "")}.”`,
         ``,
         matchReasonsShort(state, match),
         ``,
@@ -283,7 +283,7 @@ function matchReasonsShort(state: AppState, match: Match) {
   const parts: string[] = [];
   if (s.school === m.school) parts.push(`you both came through ${s.school.replace(/^(USC )?/, "the ")}`);
   const comm = s.communities.filter((c) => m.communities.includes(c));
-  if (comm.length) parts.push(`you share ${comm.map((c) => c.toLowerCase()).join(" and ")}`);
+  if (comm.length) parts.push(`you’ve both listed ${comm.map((c) => c.toLowerCase()).join(" and ")}`);
   const slots = sharedSlots(s.availability, m.availability);
   if (slots.length) parts.push(`you’re both usually free ${slots.slice(0, 2).map(slotLabel).join(" and ")}`);
   if (!parts.length) return `We matched you on where ${s.name.split(" ")[0]} wants to go and where ${m.name.split(" ")[0]} has been.`;
@@ -545,5 +545,39 @@ export function setMentorVisibility(state: AppState, mentorId: string, visibilit
     ...state,
     mentors: state.mentors.map((x) => (x.id === mentorId ? { ...x, visibility } : x)),
     auditLog: [...state.auditLog, { at, message: `${m.name} ${visibility === "paused" ? "paused" : "resumed"} visibility. Existing approved matches are unaffected; new allocations ${visibility === "paused" ? "skip" : "include"} them.` }],
+  };
+}
+
+export type StudentEditable = Pick<StudentProfile, "name" | "school" | "program" | "gradYear" | "careerGoals" | "targetRoles" | "industries" | "skills" | "interests" | "communities" | "availability" | "excludeMentorIds">;
+export type MentorEditable = Pick<MentorProfile, "name" | "headline" | "school" | "gradYear" | "trajectory" | "industries" | "roles" | "expertise" | "communities" | "mentoringPreferences" | "availability" | "capacity" | "excludeStudentIds">;
+
+/** A person edits their own reviewed profile. Applies to future matching; existing matches stay. */
+export function updateStudentProfile(state: AppState, id: string, actorId: string, patch: Partial<StudentEditable>, at = now()): AppState {
+  const s = getStudent(state, id);
+  if (actorId !== id) throw new DomainError("You can only edit your own profile.");
+  const next = { ...s, ...patch, reviewedAt: at };
+  if (!next.name.trim()) throw new DomainError("Your name can’t be empty.");
+  if (!next.careerGoals.trim()) throw new DomainError("Add your career goals.");
+  if (next.availability.length === 0) throw new DomainError("Choose at least one time you’re usually free.");
+  return {
+    ...state,
+    students: state.students.map((x) => (x.id === id ? next : x)),
+    auditLog: [...state.auditLog, { at, message: `${next.name} updated their profile. Changes apply from the next matching round.` }],
+  };
+}
+
+export function updateMentorProfile(state: AppState, id: string, actorId: string, patch: Partial<MentorEditable>, at = now()): AppState {
+  const m = getMentor(state, id);
+  if (actorId !== id) throw new DomainError("You can only edit your own profile.");
+  const next = { ...m, ...patch };
+  if (!next.name.trim()) throw new DomainError("Your name can’t be empty.");
+  if (!Number.isInteger(next.capacity) || next.capacity < 0 || next.capacity > 10) throw new DomainError("Capacity must be between 0 and 10.");
+  const committed = state.matches.filter((x) => x.mentorId === id && ["approved", "introduced", "meeting_scheduled", "meeting_held"].includes(x.stage)).length;
+  if (next.capacity < committed) throw new DomainError(`You already have ${committed} active mentee${committed === 1 ? "" : "s"}, so capacity can’t go below ${committed}.`);
+  if (next.availability.length === 0) throw new DomainError("Choose at least one time you’re usually free.");
+  return {
+    ...state,
+    mentors: state.mentors.map((x) => (x.id === id ? next : x)),
+    auditLog: [...state.auditLog, { at, message: `${next.name} updated their mentor profile${next.capacity !== m.capacity ? ` (now taking ${next.capacity})` : ""}.` }],
   };
 }

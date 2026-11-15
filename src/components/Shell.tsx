@@ -1,27 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { Mark } from "./Mark";
+import { Avatar } from "./People";
 import { roleLabel, useApp, type Role } from "@/lib/store";
 import { inboxFor } from "@/domain/inbox";
 
-const NAV = [
-  { href: "/demo", label: "Demo" },
-  { href: "/onboard/student", label: "For students" },
-  { href: "/onboard/alumni", label: "For alumni" },
-  { href: "/cohort", label: "Cohort" },
-  { href: "/matches", label: "Matches" },
-  { href: "/dashboard", label: "Dashboard" },
-];
-
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { state, role, ready } = useApp();
   const [open, setOpen] = useState(false);
   const navId = useId();
   useEffect(() => setOpen(false), [pathname]);
-  const isLanding = pathname === "/";
+  const waiting = ready ? inboxFor(state, role).length : 0;
+
+  const nav = [
+    { href: "/home", label: "Home", badge: waiting },
+    { href: "/matches", label: role.kind === "coordinator" ? "Matches" : "My matches" },
+    ...(role.kind === "coordinator" ? [{ href: "/cohort", label: "Cohort" }, { href: "/dashboard", label: "Dashboard" }] : [{ href: "/profile", label: "Profile" }]),
+  ];
 
   return (
     <>
@@ -32,89 +31,100 @@ export function Shell({ children }: { children: ReactNode }) {
             <Mark />
             <span className="brand-word">Trojan Mentor</span>
           </Link>
+          <span className="demo-chip" title="Fictional people and data, stored in this browser">Demo</span>
           <button className="btn btn-secondary btn-small menu-btn" aria-expanded={open} aria-controls={navId} onClick={() => setOpen((o) => !o)}>
             {open ? "Close" : "Menu"}
           </button>
-          <nav id={navId} className="nav" aria-label="Main" data-open={open}>
-            {NAV.map((n) => (
-              <Link key={n.href} href={n.href} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          <div id={navId} className="nav" data-open={open}>
+            <nav aria-label="Main" className="nav-links">
+              {nav.map((n) => (
+                <Link key={n.href} href={n.href} aria-current={pathname === n.href || pathname.startsWith(n.href + "/") ? "page" : undefined}>
+                  {n.label}
+                  {!!n.badge && <span className="badge" aria-label={`${n.badge} waiting`}>{n.badge}</span>}
+                </Link>
+              ))}
+            </nav>
+            <AccountSwitcher />
+          </div>
         </div>
       </header>
-      {!isLanding && <DemoBar />}
       <main id="main" tabIndex={-1}>{children}</main>
       <Footer />
       <Toast />
+      <span className="sr-only" aria-live="polite">{ready ? `Signed in as ${roleLabel(state, role)}` : ""}</span>
     </>
   );
 }
 
-function DemoBar() {
-  const { state, role, setRole, ready, reset } = useApp();
-  const [confirming, setConfirming] = useState(false);
+function AccountSwitcher() {
+  const { state, role, setRole, ready } = useApp();
+  const router = useRouter();
   const id = useId();
   const value = role.kind === "coordinator" ? "coordinator" : `${role.kind}:${role.id}`;
-  const waiting = ready ? inboxFor(state, role).length : 0;
+  const avatarId = role.kind === "coordinator" ? "coordinator" : role.id;
   return (
-    <div className="demo-bar" role="region" aria-label="Demo controls">
-      <div className="page">
-        <label htmlFor={id}>Viewing as</label>
-        <select
-          id={id}
-          value={value}
-          disabled={!ready}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === "coordinator") return setRole({ kind: "coordinator" });
-            const [kind, pid] = v.split(":");
-            setRole({ kind: kind as "student" | "mentor", id: pid } as Role);
-          }}
-        >
-          <option value="coordinator">Program coordinator</option>
-          <optgroup label="Students">
-            {state.students.map((s) => <option key={s.id} value={`student:${s.id}`}>{s.name}</option>)}
-          </optgroup>
-          <optgroup label="Alumni">
-            {state.mentors.map((m) => <option key={m.id} value={`mentor:${m.id}`}>{m.name}</option>)}
-          </optgroup>
-        </select>
-        {ready && (
-          <Link href="/matches" className={waiting ? "waiting" : "quiet"}>
-            {waiting ? `${waiting} waiting on you` : "Nothing waiting on you"}
-          </Link>
-        )}
-        <span className="spacer" />
-        <span className="quiet hide-sm">Demo roles, no sign-in. Fictional people, stored in this browser.</span>
-        {confirming ? (
-          <span className="row" style={{ gap: 10 }}>
-            <span>Start over?</span>
-            <button className="linklike" onClick={() => { reset(); setConfirming(false); }}>Yes, reset</button>
-            <button className="linklike" onClick={() => setConfirming(false)}>Cancel</button>
-          </span>
-        ) : (
-          <button className="linklike" onClick={() => setConfirming(true)}>Reset demo data</button>
-        )}
-        <span className="sr-only" aria-live="polite">Now viewing as {roleLabel(state, role)}</span>
-      </div>
+    <div className="account">
+      <Avatar id={avatarId} name={role.kind === "coordinator" ? "Program Coordinator" : roleLabel(state, role)} size={30} />
+      <label htmlFor={id} className="sr-only">Signed in as (demo account)</label>
+      <select
+        id={id}
+        value={value}
+        disabled={!ready}
+        title="Demo accounts: switch freely. There’s no real sign-in."
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === "new:student") return router.push("/onboard/student");
+          if (v === "new:mentor") return router.push("/onboard/alumni");
+          if (v === "coordinator") return setRole({ kind: "coordinator" });
+          const [kind, pid] = v.split(":");
+          setRole({ kind: kind as "student" | "mentor", id: pid } as Role);
+        }}
+      >
+        <option value="coordinator">Program coordinator</option>
+        <optgroup label="Students">
+          {state.students.map((s) => <option key={s.id} value={`student:${s.id}`}>{s.name}</option>)}
+        </optgroup>
+        <optgroup label="Alumni">
+          {state.mentors.map((m) => <option key={m.id} value={`mentor:${m.id}`}>{m.name}</option>)}
+        </optgroup>
+        <optgroup label="Join">
+          <option value="new:student">New student profile…</option>
+          <option value="new:mentor">New alum profile…</option>
+        </optgroup>
+      </select>
     </div>
   );
 }
 
 function Footer() {
+  const { reset } = useApp();
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
   return (
     <footer className="site-footer">
       <div className="page">
         <p>
           Trojan Mentor is an independent student project from the AI@USC hackathon, November 2026. It isn’t affiliated with or
-          endorsed by the University of Southern California and connects to no university systems. Everyone in the demo is fictional.
+          endorsed by the University of Southern California and connects to no university systems. This is a demo: every person is
+          fictional, accounts switch without a password, and data stays in your browser.
         </p>
-        <p className="row" style={{ gap: 16 }}>
-          <Link href="/how-it-works">How matching works</Link>
-          <Link href="/privacy">Privacy and your data</Link>
-        </p>
+        <div className="stack" style={{ ["--stack" as string]: "6px" }}>
+          <p className="row" style={{ gap: 16 }}>
+            <Link href="/how-it-works">How matching works</Link>
+            <Link href="/privacy">Privacy and your data</Link>
+          </p>
+          <p className="row" style={{ gap: 10 }}>
+            {confirming ? (
+              <>
+                <span>Start over with the original cohort?</span>
+                <button className="linklike" onClick={() => { reset(); setConfirming(false); router.push("/home"); }}>Yes, reset</button>
+                <button className="linklike" onClick={() => setConfirming(false)}>Cancel</button>
+              </>
+            ) : (
+              <button className="linklike" onClick={() => setConfirming(true)}>Reset demo data</button>
+            )}
+          </p>
+        </div>
       </div>
     </footer>
   );
