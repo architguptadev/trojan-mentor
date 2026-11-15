@@ -34,7 +34,7 @@ export function ActionCard({ action, approverName }: { action: CoordinationActio
   return (
     <article className="stack" style={{ ["--stack" as string]: "10px" }} aria-label={kindLabel}>
       <div className="row-between">
-        <h3 style={{ textTransform: "capitalize" }}>{kindLabel}</h3>
+        <h3>{kindLabel.charAt(0).toUpperCase() + kindLabel.slice(1)}</h3>
         <span className="row" style={{ gap: 8 }}>
           <span className="tag tag-sim">Simulated adapter</span>
           <span className={`tag ${cls}`}>{label}</span>

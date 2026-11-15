@@ -313,9 +313,12 @@ p {
   box-shadow: inset 0 -2px 0 var(--cardinal);
   border-radius: 0;
 }
-.menu-btn {
+.site-header .menu-btn {
   display: none;
   margin-left: auto;
+}
+.nav a {
+  white-space: nowrap;
 }
 
 .role-bar {
@@ -336,6 +339,8 @@ p {
   color: var(--gold-ink);
 }
 .role-bar select {
+  width: auto;
+  min-height: 36px;
   font: inherit;
   padding: 5px 8px;
   border: 1px solid #d5c08e;
@@ -345,8 +350,8 @@ p {
   max-width: 100%;
 }
 
-@media (max-width: 900px) {
-  .menu-btn {
+@media (max-width: 1080px) {
+  .site-header .menu-btn {
     display: inline-flex;
   }
   .nav {
@@ -791,13 +796,15 @@ tr:last-child td {
   border-bottom: 1px solid var(--rule);
   align-items: baseline;
 }
-.ledger-figure {
+.ledger-row .ledger-figure {
+  margin: 0;
+  color: var(--ink);
   font-family: var(--serif);
   font-size: clamp(2rem, 3.6vw, 2.6rem);
   line-height: 1;
   font-variant-numeric: lining-nums tabular-nums;
 }
-.ledger-figure small {
+.ledger-row .ledger-figure small {
   font-size: 0.45em;
   color: var(--ink-3);
   font-family: var(--sans);
@@ -1043,7 +1050,7 @@ tr:last-child td {
   border-top: 1px solid var(--rule);
   padding: 20px 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 120px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) 190px;
   gap: 16px 24px;
   align-items: start;
 }
@@ -1122,7 +1129,8 @@ details[open] > summary::before {
 
 .paa {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-areas: "plan act" "observe observe";
   border: 1px solid var(--rule);
   background: var(--paper);
 }
@@ -1131,9 +1139,9 @@ details[open] > summary::before {
   border-right: 1px solid var(--rule);
   min-width: 0;
 }
-.paa > section:last-child {
-  border-right: 0;
-}
+.paa > section:nth-child(1) { grid-area: plan; }
+.paa > section:nth-child(2) { grid-area: act; border-right: 0; }
+.paa > section:nth-child(3) { grid-area: observe; border-right: 0; border-top: 1px solid var(--rule); }
 .paa h4 {
   margin: 0 0 10px;
   font-size: 0.74rem;
@@ -1152,9 +1160,10 @@ details[open] > summary::before {
   text-transform: none;
   color: var(--cardinal);
 }
-@media (max-width: 900px) {
+@media (max-width: 640px) {
   .paa {
     grid-template-columns: 1fr;
+    grid-template-areas: "plan" "act" "observe";
   }
   .paa > section {
     border-right: 0;
@@ -1194,7 +1203,7 @@ details[open] > summary::before {
 }
 .history li {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 92px 1fr;
   gap: 8px;
   padding: 7px 0;
   border-bottom: 1px dotted var(--rule);
@@ -1361,4 +1370,17 @@ details[open] > summary::before {
     transition: none !important;
     animation: none !important;
   }
+}
+
+@media (max-width: 640px) {
+  .pair {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .pair .amp {
+    font-size: 1.3rem;
+  }
+}
+.proposal .tag {
+  white-space: normal;
 }

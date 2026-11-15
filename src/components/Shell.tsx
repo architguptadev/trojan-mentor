@@ -8,12 +8,12 @@ import { roleLabel, useApp, type Role } from "@/lib/store";
 
 const NAV = [
   { href: "/demo", label: "Guided demo" },
-  { href: "/onboard/student", label: "Student onboarding" },
-  { href: "/onboard/alumni", label: "Alumni onboarding" },
+  { href: "/onboard/student", label: "Onboard a student" },
+  { href: "/onboard/alumni", label: "Onboard alumni" },
   { href: "/cohort", label: "Cohort" },
   { href: "/matches", label: "Matches" },
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/privacy", label: "Privacy & data" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export function Shell({ children }: { children: ReactNode }) {

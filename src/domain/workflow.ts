@@ -50,8 +50,15 @@ export function getAction(state: AppState, id: string): CoordinationAction {
 
 /** Fictional demo addresses on the reserved example.org domain. Nothing is ever delivered. */
 export function demoEmail(p: { id: string; name: string }) {
-  const first = p.name.split(" ")[0].toLowerCase().normalize("NFKD").replace(/[^a-z]/g, "");
-  return `${first}.${p.id}@example.org`;
+  const slug = p.name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s-]/g, "")
+    .trim()
+    .split(/[\s-]+/)
+    .join(".");
+  return `${slug}@example.org`;
 }
 
 function log(state: AppState, message: string, at: string): AppState["auditLog"] {

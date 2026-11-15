@@ -105,7 +105,7 @@ export default function StudentOnboarding() {
               communities: draft.communities,
               availability: extra.availability,
               excludeMentorIds: extra.exclude,
-              consent: { ...consent, version: 1, updatedAt: at },
+              consent: { ...consent, matching: consent.profileProcessing && consent.matching, version: 1, updatedAt: at },
               fictional: true,
               source: extraction ? extraction.engine : "manual",
               reviewedAt: at,
@@ -185,7 +185,7 @@ function ConsentStep({ headingRef, consent, setConsent, onNext }: { headingRef: 
         <fieldset>
           <legend className="sr-only">Consent choices</legend>
           <label className="check">
-            <input type="checkbox" checked={consent.profileProcessing} onChange={(e) => setConsent({ ...consent, profileProcessing: e.target.checked, matching: e.target.checked ? consent.matching : false })} aria-describedby={tried && !consent.profileProcessing ? errId : undefined} />
+            <input type="checkbox" checked={consent.profileProcessing} onChange={(e) => setConsent({ ...consent, profileProcessing: e.target.checked })} aria-describedby={tried && !consent.profileProcessing ? errId : undefined} />
             <span>
               <strong>Store and process my reviewed profile</strong>
               <span className="hint">Required to take part. Only the fields you review are kept — never the raw resume. In this demo they’re stored in this browser only.</span>
@@ -199,7 +199,7 @@ function ConsentStep({ headingRef, consent, setConsent, onNext }: { headingRef: 
             </span>
           </label>
           <label className="check">
-            <input type="checkbox" checked={consent.matching} disabled={!consent.profileProcessing} onChange={(e) => setConsent({ ...consent, matching: e.target.checked })} />
+            <input type="checkbox" checked={consent.profileProcessing && consent.matching} disabled={!consent.profileProcessing} onChange={(e) => setConsent({ ...consent, matching: e.target.checked })} />
             <span>
               <strong>Make me visible for matching</strong>
               <span className="hint">Optional. Lets the allocator propose you to opted-in alumni. You still approve any match yourself.</span>
