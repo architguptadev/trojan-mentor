@@ -10,6 +10,6 @@ postgresql
 optimization
 accessibility
 
-# Add "gemini" ONLY after GEMINI_API_KEY is configured on the deployment and a live extraction has been verified.
-# The adapter is implemented and mock-tested, but it was not live-tested during the build.
+gemini
+# gemini: live-verified in production on Nov 15, 2026 (resume extraction, only with the student's explicit permission).
 # "postgresql": the schema ships in the repo and was checked against Postgres 17, but the demo itself uses browser storage.

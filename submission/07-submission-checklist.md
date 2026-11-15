@@ -17,7 +17,7 @@ Requirements come from https://ai-usc.devpost.com/ and /rules, read November 14,
 - [ ] **Record and upload the demo video** (≤ 3 minutes) following `05-demo-video-script.md`. Upload it to YouTube or Vimeo (unlisted is fine) and paste the link into Devpost. *Not done: it requires your screen recording and voice.*
 - [ ] **Create the Devpost submission** at https://ai-usc.devpost.com, and **add every teammate** before the deadline. *Not done: it requires your Devpost account.*
 - [ ] **Confirm eligibility:** every teammate is a currently enrolled USC student, registered, and checked in by 9:00 AM Sunday.
-- [ ] **Optional: enable Gemini.** In Vercel → Project *trojan-mentor* → Settings → Environment Variables, add `GEMINI_API_KEY` (Production). Redeploy, then upload the sample resume with external-AI consent ticked. Only after that succeeds should you add the “gemini” tag or say “Gemini integrated.” Until then, say “Gemini adapter implemented and mock-tested.”
+- [x] **Gemini enabled and live-verified** in production (Vercel env var `GEMINI_API_KEY`, encrypted). It's used only when the student ticks “Let Google’s Gemini read my resume”. Google returned intermittent 503s during testing; fallback models and the local parser cover them.
 - [ ] **Optional:** if you upload the deck as Google Slides instead of PDF, import the PDF.
 - [ ] **Disclosure:** if Devpost asks about AI tools, mention that the code was written with an AI coding assistant (see `docs/PROVENANCE.md`).
 

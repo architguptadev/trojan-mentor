@@ -15,16 +15,16 @@ em { font-style: italic; color: #7d1428; font-weight: 400; }
 p, li { font-size: 22px; line-height: 1.5; color: #463f37; }
 .foot { position: absolute; left: 80px; right: 80px; bottom: 30px; display: flex; justify-content: space-between; font-size: 13px; color: #685f54; border-top: 1px solid #ddd2bf; padding-top: 12px; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
-.shot { width: 100%; border-radius: 14px; border: 1px solid #e8e2d8; box-shadow: 0 10px 30px rgba(28,24,20,.12); }
-.layers { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #e8e2d8; background: #fff; border-radius: 18px; overflow: hidden; }
+.shot { width: 100%; border-radius: 4px; border: 1px solid #e8e2d8; box-shadow: 0 10px 30px rgba(28,24,20,.12); }
+.layers { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #e8e2d8; background: #fff; border-radius: 4px; overflow: hidden; }
 .layers div { padding: 24px; border-right: 1px solid #ddd2bf; }
 .layers div:last-child { border-right: 0; }
 .layers b { display: block; font-family: Newsreader, serif; font-weight: 500; font-size: 25px; margin: 8px 0; color: #1c1814; }
 .layers p { font-size: 17px; margin: 0; }
-.tag { display: inline-block; font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 999px; background: #f3eee5; color: #4d4540; }
+.tag { display: inline-block; font-size: 14px; font-weight: 600; padding: 2px 8px; border-radius: 3px; background: #f3eee5; color: #4d4540; }
 .journey { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid #1c1814; }
 .journey div { padding: 18px 18px 18px 0; border-bottom: 1px solid #ddd2bf; }
-.journey i { font-style: normal; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #f7ebec; color: #7d1428; font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+.journey i { font-style: normal; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 0; background: none; color: #7d1428; font-weight: 600; font-size: 14px; letter-spacing: .08em; width: auto; height: auto; place-items: start; margin-bottom: 8px; }
 .journey b { font-size: 19px; display: block; margin: 4px 0; }
 .journey span { font-size: 16px; color: #463f37; }
 .big { font-family: Newsreader, serif; font-size: 96px; line-height: 1; }
@@ -91,7 +91,7 @@ li { margin-bottom: 10px; }
   <p class="eyebrow">Technical & AI execution</p>
   <h2>Four layers, each labelled as what it is</h2>
   <div class="layers">
-    <div><span class="tag">AI interpretation</span><b>Reading resumes</b><p>Gemini with a strict JSON schema, only with consent and a server-side key. Otherwise a deterministic parser labelled “not AI.” Injection text is flagged and dropped.</p></div>
+    <div><span class="tag">AI interpretation</span><b>Reading resumes</b><p>Live Gemini with a strict JSON schema, used only after the student allows it. Otherwise a deterministic parser labelled “not AI.” Injection text is flagged and dropped.</p></div>
     <div><span class="tag">Scoring</span><b>Heuristic fit</b><p>0–100 points from career direction, expertise, school, communities and availability. Every point is explained. Not a probability.</p></div>
     <div><span class="tag">Allocation</span><b>Min-cost flow</b><p>Maximizes total fit with capacity, consent, opt-in, visibility, exclusions and a threshold. Unmatched students get honest reasons.</p></div>
     <div><span class="tag">Coordination</span><b>Plan → act → observe</b><p>Exact drafts, required approvers, attempts, history, idempotency keys. Email and calendar are simulated.</p></div>
@@ -135,7 +135,7 @@ li { margin-bottom: 10px; }
     <div>
       <h2>Ready for a pilot, honest about the gaps</h2>
       <div class="ledger">
-        <div><strong>66</strong><span>unit & integration tests (optimizer, consent, approvals, retries, what-ifs, exports, documents, mocked Gemini errors)</span></div>
+        <div><strong>73</strong><span>unit & integration tests (optimizer, consent, approvals, retries, what-ifs, exports, documents, mocked Gemini errors)</span></div>
         <div><strong>7</strong><span>end-to-end tests incl. full journey, axe accessibility, mobile, also run against production</span></div>
       </div>
     </div>

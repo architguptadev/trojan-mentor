@@ -25,7 +25,7 @@ Trojan Mentor runs the whole mentorship journey:
 - **Next.js 16 + TypeScript + React 19**, deployed on **Vercel**.
 - A **pure domain layer** (`src/domain`) holds every rule: scoring, the allocator, consent, approvals, coordination and metrics. The UI only calls these functions, so the same rules can move behind a server API unchanged.
 - **Allocator:** successive-shortest-path min-cost flow with Bellman–Ford. It's verified against brute-force enumeration on 300 random cohorts, plus a constructed case where greedy loses (90 vs 145).
-- **Document pipeline:** server-side `/api/extract` with size, type, magic-byte and encoding validation, and PDF text extraction (unpdf). It has a Gemini REST adapter with a fixed JSON response schema, a timeout, and classified errors (quota, auth, invalid output). A deterministic **simple reader, labelled "not AI"**, runs when no key is configured. It handles labelled lines and section-style PDFs. A sanitizer detects and drops instruction-like content ("ignore previous instructions…"), strips control and bidi characters, and bounds every field.
+- **Document pipeline:** server-side `/api/extract` with size, type, magic-byte and encoding validation, and PDF text extraction (unpdf). It calls Google Gemini (live, server-side) with a fixed JSON response schema, a timeout, fallback models when Google is overloaded, and classified errors (quota, auth, invalid output). Gemini runs only after the student explicitly allows it; otherwise a local parser runs and the screen says so. A deterministic **simple reader, labelled "not AI"**, runs when no key is configured. It handles labelled lines and section-style PDFs. A sanitizer detects and drops instruction-like content ("ignore previous instructions…"), strips control and bidi characters, and bounds every field.
 - **Consent versioning:** every approval records the consent version it was made under. Withdrawing consent revokes matches and cancels pending drafts, so a stale approval can't authorize anything new.
 - **Persistence:** browser localStorage for the credential-free demo, disclosed throughout the UI. A Postgres/Supabase schema with row-level security enabled ships in the repo for the server-backed phase.
 - **Design:** an original editorial identity: Fraunces and Public Sans, warm ivory, deep cardinal and restrained gold. It uses ledgers and rules instead of metric tiles. It isn't USC branding.
@@ -40,7 +40,7 @@ Trojan Mentor runs the whole mentorship journey:
 ## Accomplishments that we're proud of
 
 - The whole journey works end to end in a browser with no credentials, and it survives a refresh.
-- 71 unit/integration tests and 8 Playwright end-to-end tests pass. The end-to-end tests cover the full journey from sign-up to milestones, consent withdrawal, declines, real PDF upload, document errors, profile editing, an axe accessibility scan, keyboard access and mobile overflow. The suite also passes against the live deployment.
+- 73 unit/integration tests and 8 Playwright end-to-end tests pass. The end-to-end tests cover the full journey from sign-up to milestones, consent withdrawal, declines, real PDF upload, document errors, profile editing, an axe accessibility scan, keyboard access and mobile overflow. The suite also passes against the live deployment.
 - Unmatched students get a truthful explanation instead of a manufactured match.
 
 ## What we learned

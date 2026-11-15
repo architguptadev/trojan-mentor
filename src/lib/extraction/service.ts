@@ -43,8 +43,8 @@ export async function extractProfile(req: ExtractRequest, gemini: GeminiConfig |
     let engine: "gemini" | "demo-parser";
     if (req.engine === "ai") {
       if (!req.externalAIConsent)
-        throw new ExtractionError("consent_required", "External AI processing needs your consent. You can use the demo parser instead.", true);
-      if (!gemini) throw new ExtractionError("not_configured", "AI interpretation isn’t configured on this server. Use the demo parser instead.", true);
+        throw new ExtractionError("consent_required", "Gemini can only read your resume with your permission. You can use the local text parser instead.", true);
+      if (!gemini) throw new ExtractionError("not_configured", "Gemini isn’t configured on this server. Use the local text parser instead.", true);
       if (!pdfBytes && text.trim().length < 40) throw new ExtractionError("unreadable", "We couldn’t find enough readable text in this document.");
       raw = await extractWithGemini(pdfBytes ? { kind: "pdf", base64: Buffer.from(pdfBytes).toString("base64") } : { kind: "text", text }, gemini);
       engine = "gemini";
