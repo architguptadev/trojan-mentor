@@ -1,0 +1,17 @@
+Imani Castellanos-Reed
+Fictional sample resume — Trojan Mentor demo
+University of Southern California, Viterbi School of Engineering
+B.S. Computer Science, Expected May 2027
+
+Objective: Grow from software engineering internships into product management for digital health tools.
+Target roles: Associate product manager, Product manager
+Industries: Digital health, Health care
+
+Experience
+Software Engineering Intern, Brightwater Clinics (fictional) — Summer 2026
+- Built a scheduling feature used by front-desk staff; ran five interviews with clinic staff first.
+Undergraduate Researcher, Human-Centered Computing Lab (fictional) — 2025–present
+
+Skills: Python, TypeScript, SQL, UX research, Figma
+Interests: Public speaking, Health equity
+Communities: First-generation college student, Women in Engineering
