@@ -1,0 +1,15 @@
+next.js
+typescript
+react
+zod
+vitest
+playwright
+axe-core
+vercel
+postgresql
+optimization
+accessibility
+
+# Add "gemini" ONLY after GEMINI_API_KEY is configured on the deployment and a live extraction has been verified.
+# The adapter is implemented and mock-tested, but it was not live-tested during the build.
+# "postgresql": the schema ships in the repo and was checked against Postgres 17, but the demo itself uses browser storage.

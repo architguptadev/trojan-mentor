@@ -4,6 +4,8 @@
 
 Built for the **AI@USC hackathon (November 14–15, 2026)**. This is an independent student project. It is **not affiliated with, sponsored by, or endorsed by the University of Southern California**, and it connects to no USC system, PeopleGrove, or alumni database. Every person and organization in the demo is fictional.
 
+**Live demo:** https://trojan-mentor.vercel.app · **Submission materials:** [`submission/`](submission/)
+
 > Onboard → review extracted profile → allocate the cohort → student and mentor approve → approve introduction → coordinate first meeting → complete milestones → see updated cohort metrics.
 
 ## Quick start (no credentials needed)
